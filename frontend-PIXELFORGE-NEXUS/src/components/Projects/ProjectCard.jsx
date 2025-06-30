@@ -110,7 +110,8 @@ const ProjectCard = ({
           View Details
         </button>
 
-        {showAdminActions && (
+        {/* Admin: Edit and Assign Developer */}
+        {user?.role === "admin" && (
           <>
             <button onClick={() => onEditProject(project)} className="btn btn-secondary">
               Edit
@@ -121,17 +122,18 @@ const ProjectCard = ({
           </>
         )}
 
-        {showLeadActions && (
-          <>
-            <button onClick={() => onAssignDeveloper(project)} className="btn btn-secondary">
-              Assign Developer
-            </button>
-            {canUploadDocuments() && (
-              <button onClick={() => setShowUpload(!showUpload)} className="btn btn-secondary">
-                Upload Document
-              </button>
-            )}
-          </>
+        {/* Project Lead: Assign Developer (if lead of this project) */}
+        {user?.role === "project_lead" && (project.projectLead === user._id || project.projectLead?._id === user._id) && (
+          <button onClick={() => onAssignDeveloper(project)} className="btn btn-secondary">
+            Assign Developer
+          </button>
+        )}
+        
+        {/* Upload Document for admin or project lead */}
+        {(user?.role === "admin" || (user?.role === "project_lead" && (project.projectLead === user._id || project.projectLead?._id === user._id))) && (
+          <button onClick={() => setShowUpload(!showUpload)} className="btn btn-secondary">
+            Upload Document
+          </button>
         )}
       </div>
 

@@ -314,6 +314,11 @@ router.post(
     const userRole = req.user.role
     const userCompanyId = req.user.company._id
 
+    // console.log("userRole", userRole, typeof userRole)
+    // console.log("userCompanyId", userCompanyId, typeof userCompanyId)
+    // console.log("userId", userId, typeof userId)
+    // console.log("projectId", projectId, typeof projectId)
+
     // Check if user can upload to this project
     const canUpload = await Document.canUserUploadToProject(projectId, userId, userRole, userCompanyId)
     if (!canUpload) {
@@ -362,6 +367,11 @@ router.get(
     const userRole = req.user.role
     const userCompanyId = req.user.company._id
 
+    // console.log("userRole", userRole, typeof userRole)
+    // console.log("userCompanyId", userCompanyId, typeof userCompanyId)
+    // console.log("userId", userId, typeof userId)
+    // console.log("projectId", projectId, typeof projectId)
+
     try {
       const documents = await Document.getProjectDocuments(projectId, userId, userRole, userCompanyId)
 
@@ -377,43 +387,43 @@ router.get(
 )
 
 // ✅ FIXED: Download document (with proper access control)
-router.get(
-  "/:id/documents/:documentId/download",
-  catchAsync(async (req, res, next) => {
-    const { documentId } = req.params
-    const userId = req.user._id
-    const userRole = req.user.role
-    const userCompanyId = req.user.company._id
+// router.get(
+//   "/:id/documents/:documentId/download",
+//   catchAsync(async (req, res, next) => {
+//     const { documentId } = req.params
+//     const userId = req.user._id
+//     const userRole = req.user.role
+//     const userCompanyId = req.user.company._id
 
-    const document = await Document.findById(documentId).populate("project")
+//     const document = await Document.findById(documentId).populate("project")
 
-    if (!document) {
-      return next(new AppError("Document not found", 404))
-    }
+//     if (!document) {
+//       return next(new AppError("Document not found", 404))
+//     }
 
-    // Check if user can access this project's documents
-    const canAccess = await Project.canUserAccessProject(document.project._id, userId, userRole, userCompanyId)
-    if (!canAccess) {
-      return next(new AppError("Access denied to this document", 403))
-    }
+//     // Check if user can access this project's documents
+//     const canAccess = await Project.canUserAccessProject(document.project._id, userId, userRole, userCompanyId)
+//     if (!canAccess) {
+//       return next(new AppError("Access denied to this document", 403))
+//     }
 
-    // Check if file exists
-    if (!fs.existsSync(document.path)) {
-      return next(new AppError("File not found on server", 404))
-    }
+//     // Check if file exists
+//     if (!fs.existsSync(document.path)) {
+//       return next(new AppError("File not found on server", 404))
+//     }
 
-    // Increment download count
-    await document.incrementDownloadCount()
+//     // Increment download count
+//     await document.incrementDownloadCount()
 
-    // Set appropriate headers
-    res.setHeader("Content-Disposition", `attachment; filename="${document.originalName}"`)
-    res.setHeader("Content-Type", document.mimetype)
+//     // Set appropriate headers
+//     res.setHeader("Content-Disposition", `attachment; filename="${document.originalName}"`)
+//     res.setHeader("Content-Type", document.mimetype)
 
-    // Stream the file
-    const fileStream = fs.createReadStream(document.path)
-    fileStream.pipe(res)
-  }),
-)
+//     // Stream the file
+//     const fileStream = fs.createReadStream(document.path)
+//     fileStream.pipe(res)
+//   }),
+// )
 
 // ✅ FIXED: Delete document (Admin and Project Lead only)
 router.delete(
@@ -446,7 +456,7 @@ router.delete(
     })
 
     // Delete document record
-    await document.remove()
+    await document.deleteOne()
 
     res.status(200).json({
       success: true,

@@ -7,12 +7,16 @@ import { projectAPI } from "../../services/api"
 import DocumentUpload from "./DocumentUpload"
 import "./ProjectDetails.css"
 import axios from "axios"
+import EditProjectModal from "./EditProjectModal"
+import AssignDeveloperModal from "./AssignDeveloperModal"
+import { fetchUsers } from "../../store/slices/userSlice"
 
 const ProjectDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
+  const { users } = useSelector((state) => state.users)
   const [project, setProject] = useState(null)
   const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,12 +24,17 @@ const ProjectDetails = () => {
   const [showUpload, setShowUpload] = useState(false)
   const [showDocuments, setShowDocuments] = useState(false)
   const [error, setError] = useState("")
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [assigning, setAssigning] = useState(false)
+  const [removingDevId, setRemovingDevId] = useState(null)
 
   useEffect(() => {
     if (id) {
       fetchProject()
     }
-  }, [id])
+    dispatch(fetchUsers())
+  }, [id, dispatch])
 
   const fetchProject = async () => {
     try {
@@ -169,6 +178,46 @@ const ProjectDetails = () => {
     }
   }
 
+  const handleEditProject = () => setShowEditModal(true)
+  const handleAssignDeveloper = () => setShowAssignModal(true)
+  const handleEditProjectSubmit = async (projectId, updateData) => {
+    try {
+      await projectAPI.updateProject(projectId, updateData)
+      setShowEditModal(false)
+      fetchProject()
+      return { success: true }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to update project"
+      return { success: false, error: errorMessage }
+    }
+  }
+  const handleAssignDeveloperSubmit = async (developerId) => {
+    setAssigning(true)
+    try {
+      await projectAPI.assignDeveloper(id, developerId)
+      setShowAssignModal(false)
+      fetchProject()
+      return { success: true }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to assign developer"
+      return { success: false, error: errorMessage }
+    } finally {
+      setAssigning(false)
+    }
+  }
+  const handleRemoveDeveloper = async (developerId) => {
+    if (!window.confirm("Remove this developer from the project?")) return
+    setRemovingDevId(developerId)
+    try {
+      await projectAPI.removeDeveloper(id, developerId)
+      fetchProject()
+    } catch (error) {
+      alert("Failed to remove developer")
+    } finally {
+      setRemovingDevId(null)
+    }
+  }
+
   if (loading) {
     return <div className="loading">Loading project details...</div>
   }
@@ -217,6 +266,16 @@ const ProjectDetails = () => {
         <div className="header-content">
           <h1>{project.name}</h1>
           <span className={`status-badge ${project.status}`}>{project.status}</span>
+          {user?.role === "admin" && (
+            <button onClick={handleEditProject} className="edit-btn" style={{marginLeft: 16}}>
+              Edit Project
+            </button>
+          )}
+          {user?.role === "project_lead" && (project.projectLead === user._id || project.projectLead?._id === user._id) && (
+            <button onClick={handleAssignDeveloper} className="assign-btn" style={{marginLeft: 16}}>
+              Manage Developers
+            </button>
+          )}
         </div>
       </div>
 
@@ -271,6 +330,15 @@ const ProjectDetails = () => {
                   <div key={dev._id || dev} className="team-member">
                     <span>{dev.name || dev}</span>
                     <span className="role">Developer</span>
+                    {user?.role === "project_lead" && (project.projectLead === user._id || project.projectLead?._id === user._id) && (
+                      <button
+                        className="remove-dev-btn"
+                        onClick={() => handleRemoveDeveloper(dev._id || dev)}
+                        disabled={removingDevId === (dev._id || dev)}
+                      >
+                        {removingDevId === (dev._id || dev) ? "Removing..." : "Remove"}
+                      </button>
+                    )}
                   </div>
                 ))
               ) : (
@@ -340,6 +408,22 @@ const ProjectDetails = () => {
           {error && showDocuments && <div className="error-message">{error}</div>}
         </div>
       </div>
+
+      {showEditModal && (
+        <EditProjectModal
+          project={project}
+          onClose={() => setShowEditModal(false)}
+          onSubmit={handleEditProjectSubmit}
+        />
+      )}
+      {showAssignModal && (
+        <AssignDeveloperModal
+          project={project}
+          developers={users.filter((u) => u.role === "developer")}
+          onClose={() => setShowAssignModal(false)}
+          onSubmit={handleAssignDeveloperSubmit}
+        />
+      )}
     </div>
   )
 }

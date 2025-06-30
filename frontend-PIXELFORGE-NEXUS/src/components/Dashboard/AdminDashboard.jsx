@@ -114,7 +114,7 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
                   <ProjectCard
                     key={project._id}
                     project={project}
-                    onEdit={handleEditProject} // ✅ NEW: Edit functionality
+                    onEditProject={handleEditProject}
                     onMarkComplete={handleMarkComplete}
                     onDelete={handleDeleteProject}
                     onDocumentUpload={handleDocumentUpload}
@@ -131,7 +131,7 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
                   <ProjectCard
                     key={project._id}
                     project={project}
-                    onEdit={handleEditProject} // ✅ NEW: Edit functionality
+                    onEditProject={handleEditProject}
                     onDelete={handleDeleteProject}
                     onDocumentUpload={handleDocumentUpload}
                     showAdminActions={true}

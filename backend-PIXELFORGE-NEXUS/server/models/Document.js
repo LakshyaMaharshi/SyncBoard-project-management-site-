@@ -167,9 +167,9 @@ documentSchema.statics.getProjectDocuments = async function (projectId, userId, 
   if (userRole === "admin") {
     hasAccess = true
   } else if (userRole === "project_lead") {
-    hasAccess = project.projectLead && project.projectLead.toString() === userId
+    hasAccess = project.projectLead && project.projectLead.toString() === userId.toString()
   } else if (userRole === "developer") {
-    hasAccess = project.assignedDevelopers.some((dev) => dev.toString() === userId)
+    hasAccess = project.assignedDevelopers.some((dev) => dev.toString() === userId.toString())
   }
 
   if (!hasAccess) {
@@ -194,7 +194,8 @@ documentSchema.statics.canUserUploadToProject = async (projectId, userId, userRo
 
   // Project lead can upload to projects they are assigned to lead
   if (userRole === "project_lead") {
-    return project.projectLead && project.projectLead.toString() === userId
+    // console.log(userId, typeof userId)
+    return project.projectLead && project.projectLead.toString() === userId.toString()
   }
 
   // Developers cannot upload documents
@@ -205,17 +206,27 @@ documentSchema.statics.canUserUploadToProject = async (projectId, userId, userRo
 documentSchema.statics.canUserDeleteDocument = async function (documentId, userId, userRole, userCompanyId) {
   const document = await this.findById(documentId).populate("project")
 
-  if (!document) return false
+  if (!document) {
+    console.log("document not found")
+    return false
+  }
 
   // Check if project belongs to user's company
-  if (document.project.company.toString() !== userCompanyId.toString()) return false
+  if (document.project.company.toString() !== userCompanyId.toString()) {
+    console.log("project does not belong to user's company")
+    return false
+  }
 
   // Admin can delete any document in their company
-  if (userRole === "admin") return true
+  if (userRole === "admin") {
+    console.log("admin can delete document")
+    return true
+  }
 
   // Project lead can delete documents from projects they lead
   if (userRole === "project_lead") {
-    return document.project.projectLead && document.project.projectLead.toString() === userId
+    console.log("project lead can delete document")
+    return document.project.projectLead && document.project.projectLead.toString() === userId.toString()
   }
 
   // Developers cannot delete documents
