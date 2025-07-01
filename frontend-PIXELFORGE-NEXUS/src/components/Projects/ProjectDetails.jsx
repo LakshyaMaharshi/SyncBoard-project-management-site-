@@ -5,8 +5,6 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
 import { projectAPI } from "../../services/api"
 import DocumentUpload from "./DocumentUpload"
-import "./ProjectDetails.css"
-import axios from "axios"
 import EditProjectModal from "./EditProjectModal"
 import AssignDeveloperModal from "./AssignDeveloperModal"
 import { fetchUsers } from "../../store/slices/userSlice"
@@ -77,7 +75,7 @@ const ProjectDetails = () => {
       await projectAPI.uploadDocument(id, formData)
       setShowUpload(false)
       if (showDocuments) {
-        fetchDocuments() // Refresh documents if they're being shown
+        fetchDocuments()
       }
       alert("Document uploaded successfully!")
       return { success: true }
@@ -93,7 +91,7 @@ const ProjectDetails = () => {
     if (window.confirm("Are you sure you want to delete this document?")) {
       try {
         await projectAPI.deleteDocument(id, documentId)
-        fetchDocuments() // Refresh documents
+        fetchDocuments()
         alert("Document deleted successfully!")
       } catch (error) {
         console.error("Delete failed:", error)
@@ -161,7 +159,6 @@ const ProjectDetails = () => {
     }
   }
 
-  // Add this function for viewing PDFs
   const viewDocument = async (fileUrl, fileName) => {
     try {
       const match = fileUrl.match(/\/api\/projects\/([^/]+)\/documents\/([^/]+)\/download/)
@@ -219,14 +216,17 @@ const ProjectDetails = () => {
   }
 
   if (loading) {
-    return <div className="loading">Loading project details...</div>
+    return <div className="text-center text-gray-600 text-lg">Loading project details...</div>
   }
 
   if (error && !project) {
     return (
-      <div className="error-container">
-        <p>{error}</p>
-        <button onClick={() => navigate("/dashboard")} className="back-btn">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <p className="text-red-600 text-lg mb-4">{error}</p>
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
           Back to Dashboard
         </button>
       </div>
@@ -235,9 +235,12 @@ const ProjectDetails = () => {
 
   if (!project) {
     return (
-      <div className="error-container">
-        <p>Project not found</p>
-        <button onClick={() => navigate("/dashboard")} className="back-btn">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <p className="text-red-600 text-lg mb-4">Project not found</p>
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
           Back to Dashboard
         </button>
       </div>
@@ -246,9 +249,12 @@ const ProjectDetails = () => {
 
   if (!canViewProject()) {
     return (
-      <div className="error-container">
-        <p>You don't have permission to view this project</p>
-        <button onClick={() => navigate("/dashboard")} className="back-btn">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <p className="text-red-600 text-lg mb-4">You don't have permission to view this project</p>
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
           Back to Dashboard
         </button>
       </div>
@@ -258,83 +264,120 @@ const ProjectDetails = () => {
   const isOverdue = new Date(project.deadline) < new Date() && project.status !== "completed"
 
   return (
-    <div className="project-details">
-      <div className="project-header">
-        <button onClick={() => navigate("/dashboard")} className="back-btn">
-          ← Back to Dashboard
-        </button>
-        <div className="header-content">
-          <h1>{project.name}</h1>
-          <span className={`status-badge ${project.status}`}>{project.status}</span>
-          {user?.role === "admin" && (
-            <button onClick={handleEditProject} className="edit-btn" style={{marginLeft: 16}}>
-              Edit Project
-            </button>
-          )}
-          {user?.role === "project_lead" && (project.projectLead === user._id || project.projectLead?._id === user._id) && (
-            <button onClick={handleAssignDeveloper} className="assign-btn" style={{marginLeft: 16}}>
-              Manage Developers
-            </button>
-          )}
+    <div className="max-w-4xl mx-auto p-6 bg-gray-100 min-h-screen">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+          >
+            ← Back to Dashboard
+          </button>
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-semibold text-gray-800">{project.name}</h1>
+            <span
+              className={`px-3 py-1 text-sm font-medium text-white rounded-full ${
+                project.status === "active"
+                  ? "bg-green-600"
+                  : project.status === "on_hold"
+                  ? "bg-yellow-600"
+                  : project.status === "completed"
+                  ? "bg-blue-600"
+                  : "bg-red-600"
+              }`}
+            >
+              {project.status}
+            </span>
+          </div>
+          <div className="flex space-x-3">
+            {user?.role === "admin" && (
+              <button
+                onClick={handleEditProject}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              >
+                Edit Project
+              </button>
+            )}
+            {user?.role === "project_lead" && (project.projectLead === user._id || project.projectLead?._id === user._id) && (
+              <button
+                onClick={handleAssignDeveloper}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              >
+                Manage Developers
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="project-content">
-        <div className="project-info">
-          <div className="info-section">
-            <h2>Project Information</h2>
-            <div className="info-grid">
-              <div className="info-item">
-                <strong>Description:</strong>
-                <p>{project.description}</p>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Project Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <strong className="text-sm font-medium text-gray-700">Description:</strong>
+                <p className="text-sm text-gray-600">{project.description}</p>
               </div>
-              <div className="info-item">
-                <strong>Deadline:</strong>
-                <p>
+              <div>
+                <strong className="text-sm font-medium text-gray-700">Deadline:</strong>
+                <p className="text-sm text-gray-600">
                   {formatDate(project.deadline)}
-                  {isOverdue && <span className="overdue-text"> (Overdue)</span>}
+                  {isOverdue && <span className="text-red-600"> (Overdue)</span>}
                 </p>
               </div>
-              <div className="info-item">
-                <strong>Priority:</strong>
-                <p className={`priority-text ${project.priority}`}>{project.priority?.toUpperCase()}</p>
+              <div>
+                <strong className="text-sm font-medium text-gray-700">Priority:</strong>
+                <p
+                  className={`text-sm font-medium ${
+                    project.priority === "low"
+                      ? "text-green-600"
+                      : project.priority === "medium"
+                      ? "text-yellow-600"
+                      : project.priority === "high"
+                      ? "text-orange-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {project.priority?.toUpperCase()}
+                </p>
               </div>
-              <div className="info-item">
-                <strong>Project Lead:</strong>
-                <p>{project.projectLead?.name || "Not assigned"}</p>
+              <div>
+                <strong className="text-sm font-medium text-gray-700">Project Lead:</strong>
+                <p className="text-sm text-gray-600">{project.projectLead?.name || "Not assigned"}</p>
               </div>
-              <div className="info-item">
-                <strong>Created:</strong>
-                <p>{formatDate(project.createdAt)}</p>
+              <div>
+                <strong className="text-sm font-medium text-gray-700">Created:</strong>
+                <p className="text-sm text-gray-600">{formatDate(project.createdAt)}</p>
               </div>
               {project.estimatedHours && (
-                <div className="info-item">
-                  <strong>Estimated Hours:</strong>
-                  <p>{project.estimatedHours}</p>
+                <div>
+                  <strong className="text-sm font-medium text-gray-700">Estimated Hours:</strong>
+                  <p className="text-sm text-gray-600">{project.estimatedHours}</p>
                 </div>
               )}
               {project.actualHours && (
-                <div className="info-item">
-                  <strong>Actual Hours:</strong>
-                  <p>{project.actualHours}</p>
+                <div>
+                  <strong className="text-sm font-medium text-gray-700">Actual Hours:</strong>
+                  <p className="text-sm text-gray-600">{project.actualHours}</p>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="info-section">
-            <h2>Team Members</h2>
-            <div className="team-list">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Team Members</h2>
+            <div className="space-y-2">
               {project.assignedDevelopers?.length > 0 ? (
                 project.assignedDevelopers.map((dev) => (
-                  <div key={dev._id || dev} className="team-member">
-                    <span>{dev.name || dev}</span>
-                    <span className="role">Developer</span>
+                  <div key={dev._id || dev} className="flex items-center justify-between py-2 border-b border-gray-200">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">{dev.name || dev}</span>
+                      <span className="text-xs text-gray-500">Developer</span>
+                    </div>
                     {user?.role === "project_lead" && (project.projectLead === user._id || project.projectLead?._id === user._id) && (
                       <button
-                        className="remove-dev-btn"
                         onClick={() => handleRemoveDeveloper(dev._id || dev)}
                         disabled={removingDevId === (dev._id || dev)}
+                        className="text-red-600 hover:text-red-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
                       >
                         {removingDevId === (dev._id || dev) ? "Removing..." : "Remove"}
                       </button>
@@ -342,70 +385,85 @@ const ProjectDetails = () => {
                   </div>
                 ))
               ) : (
-                <p>No developers assigned</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="documents-section">
-          <div className="section-header">
-            <h2>Project Documents</h2>
-            <div className="document-actions">
-              {canViewDocuments() && (
-                <button onClick={fetchDocuments} className="view-docs-btn" disabled={documentsLoading}>
-                  {documentsLoading ? "Loading..." : "View Documents"}
-                </button>
-              )}
-              {canUploadDocuments() && (
-                <button onClick={() => setShowUpload(!showUpload)} className="upload-btn">
-                  Upload Document
-                </button>
+                <p className="text-sm text-gray-600">No developers assigned</p>
               )}
             </div>
           </div>
 
-          {showUpload && <DocumentUpload onUpload={handleDocumentUpload} onCancel={() => setShowUpload(false)} />}
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">Project Documents</h2>
+              <div className="flex space-x-3">
+                {canViewDocuments() && (
+                  <button
+                    onClick={fetchDocuments}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50"
+                    disabled={documentsLoading}
+                  >
+                    {documentsLoading ? "Loading..." : "View Documents"}
+                  </button>
+                )}
+                {canUploadDocuments() && (
+                  <button
+                    onClick={() => setShowUpload(!showUpload)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Upload Document
+                  </button>
+                )}
+              </div>
+            </div>
 
-          {showDocuments && (
-            <div className="documents-list">
-              {documents.length > 0 ? (
-                documents.map((doc) => (
-                  <div key={doc._id} className="document-item">
-                    <div className="document-info">
-                      <h4>{doc.originalName}</h4>
-                      <p>Uploaded: {formatDate(doc.createdAt)}</p>
-                      <p>Size: {doc.sizeFormatted || `${(doc.size / 1024 / 1024).toFixed(2)} MB`}</p>
-                      <p>Uploaded by: {doc.uploadedBy?.name}</p>
-                      {doc.description && <p>Description: {doc.description}</p>}
-                    </div>
-                    <div className="document-actions">
-                      <button onClick={() => downloadDocument(doc.downloadUrl, doc.originalName)} className="download-btn">
-                        Download
-                      </button>
-                      {doc.mimetype === "application/pdf" && (
+            {showUpload && <DocumentUpload onUpload={handleDocumentUpload} onCancel={() => setShowUpload(false)} />}
+
+            {showDocuments && (
+              <div className="space-y-4">
+                {documents.length > 0 ? (
+                  documents.map((doc) => (
+                    <div key={doc._id} className="flex items-center justify-between py-3 border-b border-gray-200">
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-medium text-gray-800">{doc.originalName}</h4>
+                        <p className="text-xs text-gray-500">Uploaded: {formatDate(doc.createdAt)}</p>
+                        <p className="text-xs text-gray-500">
+                          Size: {doc.sizeFormatted || `${(doc.size / 1024 / 1024).toFixed(2)} MB`}
+                        </p>
+                        <p className="text-xs text-gray-500">Uploaded by: {doc.uploadedBy?.name}</p>
+                        {doc.description && <p className="text-xs text-gray-500">Description: {doc.description}</p>}
+                      </div>
+                      <div className="flex space-x-2">
                         <button
-                          onClick={() => viewDocument(doc.downloadUrl, doc.originalName)}
-                          className="view-btn"
+                          onClick={() => downloadDocument(doc.downloadUrl, doc.originalName)}
+                          className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
                         >
-                          View
+                          Download
                         </button>
-                      )}
-                      {canUploadDocuments() && (
-                        <button onClick={() => handleDocumentDelete(doc._id)} className="delete-btn">
-                          Delete
-                        </button>
-                      )}
+                        {doc.mimetype === "application/pdf" && (
+                          <button
+                            onClick={() => viewDocument(doc.downloadUrl, doc.originalName)}
+                            className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            View
+                          </button>
+                        )}
+                        {canUploadDocuments() && (
+                          <button
+                            onClick={() => handleDocumentDelete(doc._id)}
+                            className="px-3 py-1 text-red-600 hover:text-red-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p>No documents uploaded</p>
-              )}
-            </div>
-          )}
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-600">No documents uploaded</p>
+                )}
+              </div>
+            )}
 
-          {error && showDocuments && <div className="error-message">{error}</div>}
+            {error && showDocuments && <div className="text-red-600 text-sm mt-4">{error}</div>}
+          </div>
         </div>
       </div>
 

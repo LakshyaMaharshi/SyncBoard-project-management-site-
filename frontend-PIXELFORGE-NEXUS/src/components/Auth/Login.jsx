@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { loginUser, clearError } from "../../store/slices/authSlice"
 import { useNavigate, Link } from "react-router-dom"
-import "./Auth.css"
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -17,14 +16,12 @@ const Login = () => {
   const navigate = useNavigate()
   const { user, loading, error, requiresMFA } = useSelector((state) => state.auth)
 
-  // Redirect if already logged in
   useEffect(() => {
     if (user) {
       navigate("/dashboard")
     }
   }, [user, navigate])
 
-  // Clear error when component mounts
   useEffect(() => {
     dispatch(clearError())
   }, [dispatch])
@@ -38,31 +35,31 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     const result = await dispatch(
       loginUser({
         email: formData.email,
         password: formData.password,
         mfaCode: requiresMFA ? formData.mfaCode : null,
-      }),
+      })
     )
-
     if (loginUser.fulfilled.match(result)) {
       navigate("/dashboard")
     }
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h1>PixelForge Nexus</h1>
-          <h2>Sign In</h2>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">PixelForge Nexus</h1>
+          <h2 className="text-xl font-semibold text-gray-600 mt-2">Sign In</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
             <input
               type="email"
               id="email"
@@ -71,11 +68,15 @@ const Login = () => {
               onChange={handleChange}
               required
               disabled={loading}
+              className="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="Enter your email"
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
             <input
               type="password"
               id="password"
@@ -84,12 +85,16 @@ const Login = () => {
               onChange={handleChange}
               required
               disabled={loading}
+              className="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="Enter your password"
             />
           </div>
 
           {requiresMFA && (
-            <div className="form-group">
-              <label htmlFor="mfaCode">MFA Code</label>
+            <div>
+              <label htmlFor="mfaCode" className="block text-sm font-medium text-gray-700">
+                MFA Code
+              </label>
               <input
                 type="text"
                 id="mfaCode"
@@ -100,21 +105,32 @@ const Login = () => {
                 maxLength="6"
                 required
                 disabled={loading}
+                className="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
           )}
 
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+              {error}
+            </div>
+          )}
 
-          <button type="submit" className="auth-button" disabled={loading}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed font-medium"
+          >
             {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
 
-        <div className="auth-footer">
-          <p>
-            {/* ✅ FIXED: Link to company registration, not team member registration */}
-            Need to create a company account? <Link to="/register">Company Registration</Link>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Need to create a company account?{" "}
+            <Link to="/register" className="text-blue-600 hover:text-blue-800 font-medium">
+              Company Registration
+            </Link>
           </p>
         </div>
       </div>
