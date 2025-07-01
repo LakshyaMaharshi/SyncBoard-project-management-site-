@@ -5,6 +5,8 @@ const Company = require("../models/Company")
 const { generateToken, authenticate } = require("../middleware/auth")
 const { AppError, catchAsync } = require("../middleware/errorHandler")
 const { generateMFASecret, generateQRCode, verifyMFAToken, validateMFATokenFormat } = require("../utils/mfa")
+const { sendMfaOtpEmail } = require("../utils/email")
+const crypto = require("crypto")
 
 const router = express.Router()
 
@@ -303,24 +305,18 @@ router.post(
   "/mfa/setup",
   authenticate,
   catchAsync(async (req, res, next) => {
-    const user = req.user
+    const user = await User.findById(req.user._id)
+    if (!user) return next(new AppError("User not found", 404))
 
-    // Check if MFA is already enabled
-    if (user.mfaEnabled) {
-      return next(new AppError("MFA is already enabled for this account", 400))
-    }
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    user.mfaOtp = crypto.createHash("sha256").update(otp).digest("hex")
+    user.mfaOtpExpires = Date.now() + 10 * 60 * 1000 // 10 minutes
 
-    // Generate MFA secret
-    const { secret, otpauthUrl } = generateMFASecret(user.email)
+    await user.save({ validateBeforeSave: false })
+    await sendMfaOtpEmail(user.email, user.name, otp)
 
-    // Generate QR code
-    const qrCode = await generateQRCode(otpauthUrl)
-
-    res.status(200).json({
-      success: true,
-      secret,
-      qrCode,
-    })
+    res.json({ success: true, message: "OTP sent to your email." })
   }),
 )
 
@@ -329,34 +325,21 @@ router.post(
   "/mfa/enable",
   authenticate,
   catchAsync(async (req, res, next) => {
-    const { token, secret } = req.body
+    const { otp } = req.body
+    const user = await User.findById(req.user._id).select("+mfaOtp +mfaOtpExpires")
+    if (!user) return next(new AppError("User not found", 404))
+    if (!user.mfaOtp || !user.mfaOtpExpires) return next(new AppError("No OTP setup in progress", 400))
+    if (user.mfaOtpExpires < Date.now()) return next(new AppError("OTP expired", 400))
 
-    // Validate input
-    if (!token || !secret) {
-      return next(new AppError("MFA token and secret are required", 400))
-    }
+    const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex")
+    if (hashedOtp !== user.mfaOtp) return next(new AppError("Invalid OTP", 400))
 
-    if (!validateMFATokenFormat(token)) {
-      return next(new AppError("Invalid MFA token format", 400))
-    }
-
-    // Verify MFA token
-    const isTokenValid = verifyMFAToken(token, secret)
-
-    if (!isTokenValid) {
-      return next(new AppError("Invalid MFA token", 400))
-    }
-
-    // Update user with MFA settings
-    const user = await User.findById(req.user._id)
     user.mfaEnabled = true
-    user.mfaSecret = secret
-    await user.save()
+    user.mfaOtp = undefined
+    user.mfaOtpExpires = undefined
+    await user.save({ validateBeforeSave: false })
 
-    res.status(200).json({
-      success: true,
-      message: "MFA enabled successfully",
-    })
+    res.json({ success: true, message: "MFA enabled successfully." })
   }),
 )
 
@@ -365,40 +348,21 @@ router.post(
   "/mfa/disable",
   authenticate,
   catchAsync(async (req, res, next) => {
-    const { token } = req.body
+    const { otp } = req.body
+    const user = await User.findById(req.user._id).select("+mfaOtp +mfaOtpExpires")
+    if (!user) return next(new AppError("User not found", 404))
+    if (!user.mfaOtp || !user.mfaOtpExpires) return next(new AppError("No OTP setup in progress", 400))
+    if (user.mfaOtpExpires < Date.now()) return next(new AppError("OTP expired", 400))
 
-    // Validate input
-    if (!token) {
-      return next(new AppError("MFA token is required", 400))
-    }
+    const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex")
+    if (hashedOtp !== user.mfaOtp) return next(new AppError("Invalid OTP", 400))
 
-    if (!validateMFATokenFormat(token)) {
-      return next(new AppError("Invalid MFA token format", 400))
-    }
-
-    // Get user with MFA secret
-    const user = await User.findById(req.user._id).select("+mfaSecret")
-
-    if (!user.mfaEnabled) {
-      return next(new AppError("MFA is not enabled for this account", 400))
-    }
-
-    // Verify MFA token
-    const isTokenValid = verifyMFAToken(token, user.mfaSecret)
-
-    if (!isTokenValid) {
-      return next(new AppError("Invalid MFA token", 400))
-    }
-
-    // Disable MFA
     user.mfaEnabled = false
-    user.mfaSecret = undefined
-    await user.save()
+    user.mfaOtp = undefined
+    user.mfaOtpExpires = undefined
+    await user.save({ validateBeforeSave: false })
 
-    res.status(200).json({
-      success: true,
-      message: "MFA disabled successfully",
-    })
+    res.json({ success: true, message: "MFA disabled successfully." })
   }),
 )
 

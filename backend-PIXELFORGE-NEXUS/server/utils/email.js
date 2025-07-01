@@ -4,7 +4,7 @@ const nodemailer = require("nodemailer")
 const createTransporter = () => {
   if (process.env.NODE_ENV === "production") {
     // Production email configuration (e.g., SendGrid, AWS SES)
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       service: "SendGrid",
       auth: {
         user: process.env.SENDGRID_USERNAME,
@@ -13,14 +13,13 @@ const createTransporter = () => {
     })
   } else {
     // Development email configuration (Ethereal Email for testing)
-    return nodemailer.createTransporter({
-      host: "smtp.ethereal.email",
-      port: 587,
+    return nodemailer.createTransport({
+      service: "gmail",
       auth: {
-        user: process.env.EMAIL_USERNAME || "ethereal.user@ethereal.email",
-        pass: process.env.EMAIL_PASSWORD || "ethereal.pass",
+        user: process.env.EMAIL_USERNAME,
+        pass: process.env.EMAIL_PASSWORD,
       },
-    })
+    });
   }
 }
 
@@ -133,8 +132,30 @@ const sendProjectAssignmentEmail = async (userEmail, userName, projectName, proj
   }
 }
 
+// Send MFA OTP email
+const sendMfaOtpEmail = async (userEmail, userName, otp) => {
+  const transporter = createTransporter();
+  const mailOptions = {
+    from: process.env.FROM_EMAIL || "noreply@pixelforge.com",
+    to: userEmail,
+    subject: "Your PixelForge Nexus MFA OTP",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #3498db;">Multi-Factor Authentication (MFA) OTP</h2>
+        <p>Hello ${userName},</p>
+        <p>Your OTP for enabling MFA is:</p>
+        <div style="font-size: 2em; font-weight: bold; margin: 20px 0;">${otp}</div>
+        <p>This code will expire in 10 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+      </div>
+    `,
+  };
+  await transporter.sendMail(mailOptions);
+};
+
 module.exports = {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendProjectAssignmentEmail,
+  sendMfaOtpEmail,
 }

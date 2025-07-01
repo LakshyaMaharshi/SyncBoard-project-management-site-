@@ -59,24 +59,24 @@ export const updatePassword = createAsyncThunk(
 export const setupMFA = createAsyncThunk("auth/setupMFA", async (_, { rejectWithValue }) => {
   try {
     const response = await authAPI.setupMFA()
-    return { qrCode: response.data.qrCode, secret: response.data.secret }
+    return { message: response.data.message }
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || "MFA setup failed")
   }
 })
 
-export const enableMFA = createAsyncThunk("auth/enableMFA", async (data, { rejectWithValue }) => {
+export const enableMFA = createAsyncThunk("auth/enableMFA", async ({ otp }, { rejectWithValue }) => {
   try {
-    await authAPI.enableMFA(data)
+    await authAPI.enableMFA({ otp })
     return "MFA enabled successfully"
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || "MFA enable failed")
   }
 })
 
-export const disableMFA = createAsyncThunk("auth/disableMFA", async (data, { rejectWithValue }) => {
+export const disableMFA = createAsyncThunk("auth/disableMFA", async ({ otp }, { rejectWithValue }) => {
   try {
-    await authAPI.disableMFA(data)
+    await authAPI.disableMFA({ otp })
     return "MFA disabled successfully"
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || "MFA disable failed")
@@ -193,25 +193,47 @@ const authSlice = createSlice({
       })
       .addCase(setupMFA.fulfilled, (state, action) => {
         state.loading = false
-        state.mfaSetup = action.payload
+        state.mfaSetup = true // Show OTP input
+        state.message = action.payload.message
         state.error = null
       })
       .addCase(setupMFA.rejected, (state, action) => {
         state.loading = false
+        state.mfaSetup = null
         state.error = action.payload
       })
 
       // Enable MFA
+      .addCase(enableMFA.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
       .addCase(enableMFA.fulfilled, (state, action) => {
+        state.loading = false
         state.user = { ...state.user, mfaEnabled: true }
-        state.message = action.payload
         state.mfaSetup = null
+        state.message = action.payload
+        state.error = null
+      })
+      .addCase(enableMFA.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
       })
 
       // Disable MFA
+      .addCase(disableMFA.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
       .addCase(disableMFA.fulfilled, (state, action) => {
+        state.loading = false
         state.user = { ...state.user, mfaEnabled: false }
         state.message = action.payload
+        state.error = null
+      })
+      .addCase(disableMFA.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
       })
   },
 })

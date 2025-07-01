@@ -48,6 +48,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       select: false, // Don't include MFA secret in queries by default
     },
+    mfaOtp: {
+      type: String,
+      select: false,
+    },
+    mfaOtpExpires: {
+      type: Date,
+      select: false,
+    },
     isActive: {
       type: Boolean,
       default: true,
