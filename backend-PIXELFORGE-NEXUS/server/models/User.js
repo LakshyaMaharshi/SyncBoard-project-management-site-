@@ -185,7 +185,9 @@ userSchema.methods.resetLoginAttempts = function () {
 
 // Static method to find user by email with password
 userSchema.statics.findByEmailWithPassword = function (email) {
-  return this.findOne({ email, isActive: true }).select("+password +mfaSecret").populate("company")
+  return this.findOne({ email, isActive: true })
+    .select("+password +mfaSecret +mfaOtp +mfaOtpExpires")
+    .populate("company")
 }
 
 module.exports = mongoose.model("User", userSchema)

@@ -7,6 +7,7 @@ const { AppError, catchAsync } = require("../middleware/errorHandler")
 const { generateMFASecret, generateQRCode, verifyMFAToken, validateMFATokenFormat } = require("../utils/mfa")
 const { sendMfaOtpEmail, sendEmailVerificationOtp } = require("../utils/email")
 const crypto = require("crypto")
+const { log } = require("console")
 
 const router = express.Router()
 
@@ -41,11 +42,44 @@ router.post(
       return next(new AppError("Account is temporarily locked due to too many failed login attempts", 423))
     }
 
-    // Check if email is verified
+    // If email is not verified, allow login with just email and password (skip MFA)
     if (!user.emailVerified) {
-      return next(new AppError("Please verify your email address before logging in", 401))
+      // Verify password
+      const isPasswordCorrect = await user.comparePassword(password)
+      if (!isPasswordCorrect) {
+        // Increment failed login attempts
+        await user.incLoginAttempts()
+        return next(new AppError("Invalid email or password", 401))
+      }
+
+      // Reset login attempts on successful login
+      if (user.loginAttempts > 0) {
+        await user.resetLoginAttempts()
+      }
+
+      // Update last login
+      user.lastLogin = new Date()
+      await user.save({ validateBeforeSave: false })
+
+      // Generate token
+      const token = generateToken(user._id)
+
+      // Remove sensitive data from response
+      const userResponse = user.toJSON()
+      delete userResponse.passwordChangedAt
+      delete userResponse.loginAttempts
+      delete userResponse.lockUntil
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          token,
+          user: userResponse,
+        },
+      })
     }
 
+    // For verified emails, continue with normal login (including MFA)
     // Verify password
     const isPasswordCorrect = await user.comparePassword(password)
 
@@ -57,11 +91,13 @@ router.post(
 
     // Check MFA if enabled
     if (user.mfaEnabled) {
-      if (!mfaCode) {
+      if (!mfaCode || mfaCode === "") {
         // Generate and send MFA OTP via email
+        console.log('LOGIN DEBUG:', { email, mfaCode, mfaOtp: user.mfaOtp, mfaOtpExpires: user.mfaOtpExpires, now: Date.now() });
+        console.log("mfaCode", mfaCode)
         const otp = Math.floor(100000 + Math.random() * 900000).toString()
         const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex")
-        
+        console.log("hashedOtp",  hashedOtp)
         user.mfaOtp = hashedOtp
         user.mfaOtpExpires = Date.now() + 10 * 60 * 1000 // 10 minutes
         await user.save({ validateBeforeSave: false })

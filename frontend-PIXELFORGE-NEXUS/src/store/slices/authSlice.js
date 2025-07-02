@@ -4,18 +4,25 @@ import { authAPI } from "../../services/api"
 // Async thunks
 export const loginUser = createAsyncThunk("auth/login", async ({ email, password, mfaCode }, { rejectWithValue }) => {
   try {
-    const response = await authAPI.login({ email, password, mfaCode })
-    const { token, user } = response.data.data
-
-    localStorage.setItem("token", token)
-    return { token, user }
+    const response = await authAPI.login({ email, password, mfaCode });
+    // If backend says MFA is required, treat as a special case
+    if (response.data.requiresMFA) {
+      // Use rejectWithValue so it goes to the .rejected reducer
+      return rejectWithValue({
+        message: response.data.message,
+        requiresMFA: true,
+      });
+    }
+    const { token, user } = response.data.data;
+    localStorage.setItem("token", token);
+    return { token, user };
   } catch (error) {
     return rejectWithValue({
       message: error.response?.data?.message || "Login failed",
       requiresMFA: error.response?.data?.requiresMFA || false,
-    })
+    });
   }
-})
+});
 
 export const registerUser = createAsyncThunk("auth/register", async (userData, { rejectWithValue }) => {
   try {
@@ -154,8 +161,8 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload.message
-        state.requiresMFA = action.payload.requiresMFA
+        state.error = action.payload?.message || 'Login failed'
+        state.requiresMFA = action.payload?.requiresMFA || false
       })
 
       // Register

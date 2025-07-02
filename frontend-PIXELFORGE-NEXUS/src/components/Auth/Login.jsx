@@ -15,6 +15,7 @@ const Login = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { user, loading, error, requiresMFA } = useSelector((state) => state.auth)
+  const [localOtpError, setLocalOtpError] = useState("")
 
   useEffect(() => {
     if (user) {
@@ -31,21 +32,36 @@ const Login = () => {
       ...formData,
       [e.target.name]: e.target.value,
     })
+    if (e.target.name === "mfaCode") setLocalOtpError("")
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const result = await dispatch(
-      loginUser({
-        email: formData.email,
-        password: formData.password,
-        mfaCode: requiresMFA ? formData.mfaCode : null,
-      })
-    )
+    setLocalOtpError("")
+    // Only send mfaCode if requiresMFA is true and the user has entered it
+    if (requiresMFA && !formData.mfaCode) {
+      setLocalOtpError("Please enter the OTP sent to your email.")
+      return
+    }
+    const payload = {
+      email: formData.email,
+      password: formData.password,
+    }
+    if (requiresMFA && formData.mfaCode) {
+      payload.mfaCode = formData.mfaCode
+    }
+    const result = await dispatch(loginUser(payload))
     if (loginUser.fulfilled.match(result)) {
       navigate("/dashboard")
     }
   }
+
+  // Clear mfaCode when requiresMFA first becomes true
+  useEffect(() => {
+    if (requiresMFA) {
+      setFormData((prev) => ({ ...prev, mfaCode: "" }))
+    }
+  }, [requiresMFA])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
@@ -107,10 +123,14 @@ const Login = () => {
                 disabled={loading}
                 className="mt-1 block w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              <div className="text-blue-600 text-xs mt-2">MFA code sent to your email. Please enter it to continue.</div>
+              {localOtpError && (
+                <div className="text-red-600 text-xs mt-2">{localOtpError}</div>
+              )}
             </div>
           )}
 
-          {error && (
+          {error && !requiresMFA && (
             <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
               {error}
             </div>
