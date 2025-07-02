@@ -103,6 +103,18 @@ export const deleteDocument = createAsyncThunk(
   },
 )
 
+export const completeProject = createAsyncThunk(
+  "projects/completeProject",
+  async (projectId, { rejectWithValue }) => {
+    try {
+      const response = await projectAPI.completeProject(projectId)
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to complete project")
+    }
+  },
+)
+
 const initialState = {
   projects: [],
   allActiveProjects: [],
@@ -223,6 +235,15 @@ const projectSlice = createSlice({
           project.documents = project.documents.filter((doc) => doc._id !== documentId)
         }
         state.message = "Document deleted successfully"
+      })
+
+      // Complete Project
+      .addCase(completeProject.fulfilled, (state, action) => {
+        const index = state.projects.findIndex((p) => p._id === action.payload._id)
+        if (index !== -1) {
+          state.projects[index] = action.payload
+        }
+        state.message = "Project marked as completed successfully"
       })
   },
 })

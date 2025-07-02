@@ -5,7 +5,7 @@ const Company = require("../models/Company")
 const { generateToken, authenticate } = require("../middleware/auth")
 const { AppError, catchAsync } = require("../middleware/errorHandler")
 const { generateMFASecret, generateQRCode, verifyMFAToken, validateMFATokenFormat } = require("../utils/mfa")
-const { sendMfaOtpEmail } = require("../utils/email")
+const { sendMfaOtpEmail, sendEmailVerificationOtp } = require("../utils/email")
 const crypto = require("crypto")
 
 const router = express.Router()
@@ -41,6 +41,11 @@ router.post(
       return next(new AppError("Account is temporarily locked due to too many failed login attempts", 423))
     }
 
+    // Check if email is verified
+    if (!user.emailVerified) {
+      return next(new AppError("Please verify your email address before logging in", 401))
+    }
+
     // Verify password
     const isPasswordCorrect = await user.comparePassword(password)
 
@@ -53,23 +58,41 @@ router.post(
     // Check MFA if enabled
     if (user.mfaEnabled) {
       if (!mfaCode) {
+        // Generate and send MFA OTP via email
+        const otp = Math.floor(100000 + Math.random() * 900000).toString()
+        const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex")
+        
+        user.mfaOtp = hashedOtp
+        user.mfaOtpExpires = Date.now() + 10 * 60 * 1000 // 10 minutes
+        await user.save({ validateBeforeSave: false })
+        
+        await sendMfaOtpEmail(user.email, user.name, otp)
+        
         return res.status(200).json({
           success: false,
           requiresMFA: true,
-          message: "MFA code required",
+          message: "MFA code sent to your email",
         })
       }
 
-      if (!validateMFATokenFormat(mfaCode)) {
-        return next(new AppError("Invalid MFA code format", 400))
+      // Verify MFA OTP
+      if (!user.mfaOtp || !user.mfaOtpExpires) {
+        return next(new AppError("No MFA OTP in progress", 400))
       }
 
-      const isMFAValid = verifyMFAToken(mfaCode, user.mfaSecret)
+      if (user.mfaOtpExpires < Date.now()) {
+        return next(new AppError("MFA OTP expired", 400))
+      }
 
-      if (!isMFAValid) {
+      const hashedOtp = crypto.createHash("sha256").update(mfaCode).digest("hex")
+      if (hashedOtp !== user.mfaOtp) {
         await user.incLoginAttempts()
         return next(new AppError("Invalid MFA code", 401))
       }
+
+      // Clear MFA OTP after successful verification
+      user.mfaOtp = undefined
+      user.mfaOtpExpires = undefined
     }
 
     // Reset login attempts on successful login
@@ -100,7 +123,7 @@ router.post(
   }),
 )
 
-// Register endpoint (Public - creates company admin and auto-login)
+// Register endpoint (Public - creates company admin with email verification)
 router.post(
   "/register",
   catchAsync(async (req, res, next) => {
@@ -136,6 +159,7 @@ router.post(
           email,
           password,
           role: "admin", // First user becomes admin of their company
+          emailVerified: false, // Email not verified yet
           // company will be set after company creation
         })
 
@@ -162,30 +186,23 @@ router.post(
         createdCompany = company
       })
 
-      // Populate the user with company data for response
-      const userWithCompany = await User.findById(createdUser._id).populate("company")
+      // Generate email verification OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString()
+      const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex")
+      
+      // Update user with OTP
+      createdUser.emailVerificationOtp = hashedOtp
+      createdUser.emailVerificationOtpExpires = Date.now() + 10 * 60 * 1000 // 10 minutes
+      await createdUser.save({ validateBeforeSave: false })
 
-      // Update last login for the new user
-      userWithCompany.lastLogin = new Date()
-      await userWithCompany.save({ validateBeforeSave: false })
-
-      // Generate token for auto-login
-      const token = generateToken(userWithCompany._id)
-
-      // Remove password from response
-      const userResponse = userWithCompany.toJSON()
-      delete userResponse.passwordChangedAt
-      delete userResponse.loginAttempts
-      delete userResponse.lockUntil
+      // Send verification email
+      await sendEmailVerificationOtp(createdUser.email, createdUser.name, otp)
 
       res.status(201).json({
         success: true,
-        message: "Company and admin user created successfully",
-        data: {
-          token, // ✅ Now sending token for auto-login
-          user: userResponse,
-          company: createdCompany,
-        },
+        message: "Registration successful! Please check your email for verification code.",
+        requiresEmailVerification: true,
+        userId: createdUser._id,
       })
     } catch (error) {
       console.error("Registration transaction failed:", error)
@@ -193,6 +210,68 @@ router.post(
     } finally {
       await session.endSession()
     }
+  }),
+)
+
+// Email verification endpoint
+router.post(
+  "/verify-email",
+  catchAsync(async (req, res, next) => {
+    const { userId, otp } = req.body
+
+    if (!userId || !otp) {
+      return next(new AppError("User ID and OTP are required", 400))
+    }
+
+    const user = await User.findById(userId).select("+emailVerificationOtp +emailVerificationOtpExpires")
+    if (!user) {
+      return next(new AppError("User not found", 404))
+    }
+
+    if (!user.emailVerificationOtp || !user.emailVerificationOtpExpires) {
+      return next(new AppError("No email verification in progress", 400))
+    }
+
+    if (user.emailVerificationOtpExpires < Date.now()) {
+      return next(new AppError("OTP expired", 400))
+    }
+
+    const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex")
+    if (hashedOtp !== user.emailVerificationOtp) {
+      return next(new AppError("Invalid OTP", 400))
+    }
+
+    // Mark email as verified
+    user.emailVerified = true
+    user.emailVerificationOtp = undefined
+    user.emailVerificationOtpExpires = undefined
+    user.isActive = true
+    await user.save({ validateBeforeSave: false })
+
+    // Populate user with company data
+    await user.populate("company")
+
+    // Update last login for the new user
+    user.lastLogin = new Date()
+    await user.save({ validateBeforeSave: false })
+
+    // Generate token for auto-login
+    const token = generateToken(user._id)
+
+    // Remove password from response
+    const userResponse = user.toJSON()
+    delete userResponse.passwordChangedAt
+    delete userResponse.loginAttempts
+    delete userResponse.lockUntil
+
+    res.status(200).json({
+      success: true,
+      message: "Email verified successfully! Welcome to PixelForge Nexus.",
+      data: {
+        token,
+        user: userResponse,
+      },
+    })
   }),
 )
 

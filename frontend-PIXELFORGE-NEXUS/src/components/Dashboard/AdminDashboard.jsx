@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
-import { createProject, updateProject, deleteProject, uploadDocument } from "../../store/slices/projectSlice"
+import { createProject, updateProject, deleteProject, uploadDocument, completeProject } from "../../store/slices/projectSlice"
 import { fetchUsers } from "../../store/slices/userSlice"
 import ProjectCard from "../Projects/ProjectCard"
 import CreateProjectModal from "../Projects/CreateProjectModal"
@@ -48,9 +48,12 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
     return { success: false, error: result.payload }
   }
 
-  const handleMarkComplete = async (projectId) => {
-    const result = await dispatch(updateProject({ id: projectId, updates: { status: "completed" } }))
-    return updateProject.fulfilled.match(result) ? { success: true } : { success: false, error: result.payload }
+  const handleCompleteProject = async (project) => {
+    if (window.confirm("Are you sure you want to mark this project as completed?")) {
+      const result = await dispatch(completeProject(project._id))
+      return completeProject.fulfilled.match(result) ? { success: true } : { success: false, error: result.payload }
+    }
+    return { success: false }
   }
 
   const handleDeleteProject = async (projectId) => {
@@ -144,7 +147,7 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
                       key={project._id}
                       project={project}
                       onEditProject={handleEditProject}
-                      onMarkComplete={handleMarkComplete}
+                      onCompleteProject={handleCompleteProject}
                       onDelete={handleDeleteProject}
                       onDocumentUpload={handleDocumentUpload}
                       showAdminActions={true}
@@ -171,6 +174,7 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
                       key={project._id}
                       project={project}
                       onEditProject={handleEditProject}
+                      onCompleteProject={handleCompleteProject}
                       onDelete={handleDeleteProject}
                       onDocumentUpload={handleDocumentUpload}
                       showAdminActions={true}

@@ -40,6 +40,7 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),
   register: (userData) => api.post("/auth/register", userData), // Company registration
+  verifyEmail: (verificationData) => api.post("/auth/verify-email", verificationData),
   registerTeamMember: (userData) => api.post("/auth/register-team-member", userData), // Team member registration
   verifyToken: (token) =>
     api.get("/auth/verify", {
@@ -59,6 +60,7 @@ export const projectAPI = {
   createProject: (projectData) => api.post("/projects", projectData),
   updateProject: (id, updates) => api.put(`/projects/${id}`, updates),
   deleteProject: (id) => api.delete(`/projects/${id}`),
+  completeProject: (id) => api.patch(`/projects/${id}/complete`),
   assignDeveloper: (projectId, developerId) => api.post(`/projects/${projectId}/assign`, { developerId }),
   removeDeveloper: (projectId, developerId) => api.post(`/projects/${projectId}/remove`, { developerId }),
   uploadDocument: (projectId, formData) =>

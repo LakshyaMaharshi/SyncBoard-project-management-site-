@@ -179,6 +179,46 @@ router.put(
   }),
 )
 
+// Mark project as completed (Admin and Project Lead only)
+router.patch(
+  "/:id/complete",
+  adminOrProjectLead,
+  catchAsync(async (req, res, next) => {
+    const project = await Project.findById(req.params.id)
+
+    if (!project) {
+      return next(new AppError("Project not found", 404))
+    }
+
+    // Check if project belongs to user's company
+    if (project.company.toString() !== req.user.company._id.toString()) {
+      return next(new AppError("Access denied to this project", 403))
+    }
+
+    // Check if user is project lead for this project
+    if (req.user.role === "project_lead" && project.projectLead.toString() !== req.user._id.toString()) {
+      return next(new AppError("Only the project lead can mark this project as completed", 403))
+    }
+
+    // Update project status to completed
+    project.status = "completed"
+    project.completedAt = new Date()
+    await project.save()
+
+    // Populate the updated project
+    await project.populate("projectLead", "name email role")
+    await project.populate("assignedDevelopers", "name email role")
+    await project.populate("createdBy", "name email")
+    await project.populate("company", "name")
+
+    res.status(200).json({
+      success: true,
+      message: "Project marked as completed successfully",
+      data: project,
+    })
+  }),
+)
+
 // Delete project (Admin only)
 router.delete(
   "/:id",

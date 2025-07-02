@@ -1,5 +1,11 @@
+const express = require("express");
 const { sendMfaOtpEmail } = require("../utils/email");
+const { authenticate } = require("../middleware/auth");
+const { AppError, catchAsync } = require("../middleware/errorHandler");
+const User = require("../models/User");
 const crypto = require("crypto");
+
+const router = express.Router();
 
 // POST /api/auth/mfa/setup
 router.post("/mfa/setup", authenticate, catchAsync(async (req, res, next) => {
@@ -54,3 +60,5 @@ router.post("/mfa/disable", authenticate, catchAsync(async (req, res, next) => {
   
     res.json({ success: true, message: "MFA disabled successfully." });
   }));
+
+module.exports = router;

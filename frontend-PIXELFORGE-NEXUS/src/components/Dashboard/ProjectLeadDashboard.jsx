@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
-import { assignDeveloper, removeDeveloper, uploadDocument } from "../../store/slices/projectSlice"
+import { assignDeveloper, removeDeveloper, uploadDocument, completeProject } from "../../store/slices/projectSlice"
 import { fetchUsers } from "../../store/slices/userSlice"
 import ProjectCard from "../Projects/ProjectCard"
 import AssignDeveloperModal from "../Projects/AssignDeveloperModal"
@@ -57,6 +57,14 @@ const ProjectLeadDashboard = ({ projects, allActiveProjects }) => {
   const handleDocumentUpload = async (projectId, file) => {
     const result = await dispatch(uploadDocument({ projectId, file }))
     return uploadDocument.fulfilled.match(result) ? { success: true } : { success: false, error: result.payload }
+  }
+
+  const handleCompleteProject = async (project) => {
+    if (window.confirm("Are you sure you want to mark this project as completed?")) {
+      const result = await dispatch(completeProject(project._id))
+      return completeProject.fulfilled.match(result) ? { success: true } : { success: false, error: result.payload }
+    }
+    return { success: false }
   }
 
   return (
@@ -117,6 +125,7 @@ const ProjectLeadDashboard = ({ projects, allActiveProjects }) => {
                     onAssignDeveloper={() => handleAssignDeveloper(project)}
                     onRemoveDeveloper={handleRemoveDeveloper}
                     onDocumentUpload={handleDocumentUpload}
+                    onCompleteProject={handleCompleteProject}
                     showLeadActions={true}
                   />
                 ))}

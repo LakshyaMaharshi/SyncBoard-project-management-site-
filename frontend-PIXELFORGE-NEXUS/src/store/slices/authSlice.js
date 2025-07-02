@@ -21,6 +21,15 @@ export const registerUser = createAsyncThunk("auth/register", async (userData, {
   try {
     const response = await authAPI.register(userData)
 
+    // Handle email verification flow
+    if (response.data.requiresEmailVerification) {
+      return { 
+        message: response.data.message,
+        requiresEmailVerification: true,
+        userId: response.data.userId
+      }
+    }
+
     // Handle auto-login after registration
     if (response.data.data && response.data.data.token) {
       const { token, user } = response.data.data
@@ -31,6 +40,18 @@ export const registerUser = createAsyncThunk("auth/register", async (userData, {
     return { message: "User registered successfully" }
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || "Registration failed")
+  }
+})
+
+export const verifyEmail = createAsyncThunk("auth/verifyEmail", async (verificationData, { rejectWithValue }) => {
+  try {
+    const response = await authAPI.verifyEmail(verificationData)
+    const { token, user } = response.data.data
+
+    localStorage.setItem("token", token)
+    return { token, user, message: response.data.message }
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || "Email verification failed")
   }
 })
 
@@ -152,6 +173,23 @@ const authSlice = createSlice({
         state.error = null
       })
       .addCase(registerUser.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
+      })
+
+      // Verify Email
+      .addCase(verifyEmail.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(verifyEmail.fulfilled, (state, action) => {
+        state.loading = false
+        state.user = action.payload.user
+        state.token = action.payload.token
+        state.message = action.payload.message
+        state.error = null
+      })
+      .addCase(verifyEmail.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })

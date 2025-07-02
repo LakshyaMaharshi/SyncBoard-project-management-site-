@@ -153,9 +153,31 @@ const sendMfaOtpEmail = async (userEmail, userName, otp) => {
   await transporter.sendMail(mailOptions);
 };
 
+// Send email verification OTP
+const sendEmailVerificationOtp = async (userEmail, userName, otp) => {
+  const transporter = createTransporter();
+  const mailOptions = {
+    from: process.env.FROM_EMAIL || "noreply@pixelforge.com",
+    to: userEmail,
+    subject: "Verify Your Email - PixelForge Nexus",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #3498db;">Email Verification</h2>
+        <p>Hello ${userName},</p>
+        <p>Please verify your email address by entering this OTP:</p>
+        <div style="font-size: 2em; font-weight: bold; margin: 20px 0;">${otp}</div>
+        <p>This code will expire in 10 minutes.</p>
+        <p>If you did not create an account, please ignore this email.</p>
+      </div>
+    `,
+  };
+  await transporter.sendMail(mailOptions);
+};
+
 module.exports = {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendProjectAssignmentEmail,
   sendMfaOtpEmail,
+  sendEmailVerificationOtp,
 }

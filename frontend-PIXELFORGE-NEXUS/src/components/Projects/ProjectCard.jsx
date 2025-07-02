@@ -11,6 +11,7 @@ const ProjectCard = ({
   onRemoveDeveloper,
   onDocumentUpload,
   onEditProject,
+  onCompleteProject,
   showAdminActions = false,
   showLeadActions = false,
   showDeveloperView = false,
@@ -151,17 +152,35 @@ const ProjectCard = ({
             >
               Assign Developer
             </button>
+            {project.status !== "completed" && (
+              <button
+                onClick={() => onCompleteProject(project)}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                Complete
+              </button>
+            )}
           </>
         )}
 
         {user?.role === "project_lead" &&
           (project.projectLead === user._id || project.projectLead?._id === user._id) && (
-            <button
-              onClick={() => onAssignDeveloper(project)}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-            >
-              Assign Developer
-            </button>
+            <>
+              <button
+                onClick={() => onAssignDeveloper(project)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              >
+                Assign Developer
+              </button>
+              {project.status !== "completed" && (
+                <button
+                  onClick={() => onCompleteProject(project)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  Complete
+                </button>
+              )}
+            </>
           )}
 
         {canUploadDocuments() && (

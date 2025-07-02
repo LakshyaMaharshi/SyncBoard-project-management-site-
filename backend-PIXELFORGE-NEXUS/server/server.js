@@ -9,6 +9,7 @@ require("dotenv").config()
 
 // Import routes
 const authRoutes = require("./routes/auth")
+const mfaRoutes = require("./routes/mfa")
 const projectRoutes = require("./routes/projects")
 const userRoutes = require("./routes/users")
 const downloadDocs = require('./routes/docsDownload');
@@ -84,6 +85,7 @@ process.on("SIGINT", async () => {
 
 // Routes
 app.use("/api/auth", authRoutes)
+app.use("/api/auth", mfaRoutes)
 app.use("/api/projects", projectRoutes)
 app.use("/api/users", userRoutes)
 app.use(downloadDocs);

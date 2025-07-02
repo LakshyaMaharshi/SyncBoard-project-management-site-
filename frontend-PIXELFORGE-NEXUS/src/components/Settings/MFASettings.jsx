@@ -34,11 +34,19 @@ const MFASettings = () => {
     if (!window.confirm("Are you sure you want to disable MFA? This will reduce your account security.")) {
       return
     }
-    const code = prompt("Please enter the OTP sent to your email to disable MFA:")
-    if (!code) return
+    
+    // First, send OTP to email
     dispatch(clearError())
     dispatch(clearMessage())
-    await dispatch(disableMFA({ otp: code }))
+    const setupResult = await dispatch(setupMFA())
+    
+    if (setupMFA.fulfilled.match(setupResult)) {
+      const code = prompt("Please enter the OTP sent to your email to disable MFA:")
+      if (!code) return
+      dispatch(clearError())
+      dispatch(clearMessage())
+      await dispatch(disableMFA({ otp: code }))
+    }
   }
 
   return (

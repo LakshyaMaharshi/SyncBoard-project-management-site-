@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
-import { registerUser, clearError, clearMessage } from "../../store/slices/authSlice"
+import { registerUser, verifyEmail, clearError, clearMessage } from "../../store/slices/authSlice"
 import { useNavigate, Link } from "react-router-dom"
 
 const Register = () => {
@@ -15,6 +15,11 @@ const Register = () => {
     industry: "",
     companySize: "1-10",
   })
+  const [verificationData, setVerificationData] = useState({
+    userId: "",
+    otp: "",
+  })
+  const [showVerification, setShowVerification] = useState(false)
   const [localError, setLocalError] = useState("")
 
   const dispatch = useDispatch()
@@ -29,6 +34,14 @@ const Register = () => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
+      [e.target.name]: e.target.value,
+    })
+    setLocalError("") // Clear local error on input change
+  }
+
+  const handleVerificationChange = (e) => {
+    setVerificationData({
+      ...verificationData,
       [e.target.name]: e.target.value,
     })
     setLocalError("") // Clear local error on input change
@@ -78,18 +91,50 @@ const Register = () => {
     )
 
     if (registerUser.fulfilled.match(result)) {
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        companyName: "",
-        companyDescription: "",
-        industry: "",
-        companySize: "1-10",
-      })
+      if (result.payload.requiresEmailVerification) {
+        setVerificationData({ ...verificationData, userId: result.payload.userId })
+        setShowVerification(true)
+      } else {
+        setFormData({
+          name: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          companyName: "",
+          companyDescription: "",
+          industry: "",
+          companySize: "1-10",
+        })
+        setTimeout(() => {
+          navigate(user ? "/dashboard" : "/login")
+        }, 1500)
+      }
+    }
+  }
+
+  const handleVerificationSubmit = async (e) => {
+    e.preventDefault()
+    dispatch(clearError())
+    dispatch(clearMessage())
+    setLocalError("")
+
+    if (!verificationData.otp) {
+      setLocalError("Please enter the verification code")
+      return
+    }
+
+    const result = await dispatch(
+      verifyEmail({
+        userId: verificationData.userId,
+        otp: verificationData.otp,
+      }),
+    )
+
+    if (verifyEmail.fulfilled.match(result)) {
+      setVerificationData({ userId: "", otp: "" })
+      setShowVerification(false)
       setTimeout(() => {
-        navigate(user ? "/dashboard" : "/login")
+        navigate("/dashboard")
       }, 1500)
     }
   }
@@ -303,6 +348,43 @@ const Register = () => {
             )}
           </button>
         </form>
+
+        {showVerification && (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="text-lg font-semibold text-blue-800 mb-4">Email Verification Required</h3>
+            <p className="text-sm text-blue-700 mb-4">
+              We've sent a verification code to your email address. Please enter it below to complete your registration.
+            </p>
+            
+            <form onSubmit={handleVerificationSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+                  Verification Code
+                </label>
+                <input
+                  type="text"
+                  id="otp"
+                  name="otp"
+                  value={verificationData.otp}
+                  onChange={handleVerificationChange}
+                  maxLength="6"
+                  placeholder="123456"
+                  required
+                  disabled={loading}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed placeholder-gray-400 text-sm"
+                />
+              </div>
+              
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-2.5 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center transition-colors duration-200"
+              >
+                {loading ? "Verifying..." : "Verify Email"}
+              </button>
+            </form>
+          </div>
+        )}
 
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-600">
