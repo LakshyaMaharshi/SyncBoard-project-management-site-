@@ -11,6 +11,9 @@ const AssignDeveloperModal = ({ project, developers, onClose, onSubmit }) => {
   // Filter out developers already assigned to the project
   const assignedDevIds = project.assignedDevelopers?.map((dev) => dev._id || dev) || []
   const availableDevelopers = developers.filter((dev) => !assignedDevIds.includes(dev._id))
+  console.log(project)
+  console.log(assignedDevIds)
+  console.log(availableDevelopers)
 
   const handleSubmit = async (e) => {
     e.preventDefault()

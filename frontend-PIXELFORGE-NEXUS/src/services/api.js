@@ -81,6 +81,7 @@ export const userAPI = {
   getUser: (id) => api.get(`/users/${id}`),
   updateUser: (id, updates) => api.put(`/users/${id}`, updates),
   deleteUser: (id) => api.delete(`/users/${id}`),
+  getDevelopers: () => api.get("/users/developers"),
 }
 
 export default api

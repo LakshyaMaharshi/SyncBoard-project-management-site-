@@ -16,13 +16,15 @@ const ProjectLeadDashboard = ({ projects, allActiveProjects }) => {
   const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
   const { users } = useSelector((state) => state.users)
+  // console.log(users, "cdscsdc")
 
   useEffect(() => {
     dispatch(fetchUsers())
   }, [dispatch])
 
-  // Filter developers from users (same company only)
-  const developers = users.filter((u) => u.role === "developer")
+  // Filter developers from users (already filtered by backend for project leads)
+  const developers = users;
+  console.log(developers)
 
   // Filter projects where user is the project lead
   const myProjects = (Array.isArray(projects) ? projects : []).filter(

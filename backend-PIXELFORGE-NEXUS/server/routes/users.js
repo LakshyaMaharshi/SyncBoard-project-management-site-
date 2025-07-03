@@ -8,6 +8,26 @@ const router = express.Router()
 // All routes require authentication
 router.use(authenticate)
 
+// Get all developers in the same company (Admin and Project Lead)
+router.get(
+  "/developers",
+  catchAsync(async (req, res, next) => {
+    // Only allow admin or project_lead
+    if (!["admin", "project_lead"].includes(req.user.role)) {
+      return next(new AppError("Access denied", 403))
+    }
+    const developers = await User.find({
+      role: "developer",
+      isActive: true,
+      company: req.user.company._id,
+    }).select("-password -mfaSecret -mfaOtp -mfaOtpExpires -emailVerificationOtp -emailVerificationOtpExpires -__v")
+    res.status(200).json({
+      success: true,
+      data: developers,
+    })
+  })
+)
+
 // Get all users (Admin only)
 router.get(
   "/",
@@ -148,27 +168,33 @@ router.delete(
       return next(new AppError("User not found", 404))
     }
 
-    // Check if user is assigned to any active projects
+    // Check if user is assigned to any projects (lead or developer)
     const Project = require("../models/Project")
-    const activeProjects = await Project.find({
+    const assignedProjects = await Project.find({
       $or: [{ projectLead: userId }, { assignedDevelopers: userId }],
-      status: { $ne: "completed" },
     })
 
-    if (activeProjects.length > 0) {
-      return next(new AppError("Cannot delete user who is assigned to active projects", 400))
+    // Separate into completed and not completed
+    const notCompletedProjects = assignedProjects.filter(p => p.status !== "completed")
+
+    if (notCompletedProjects.length > 0) {
+      const projectNames = notCompletedProjects.map(p => p.name)
+      return next(
+        new AppError(
+          `Cannot delete user. User is assigned to the following active projects: ${projectNames.join(", ")}`,
+          400
+        )
+      )
     }
 
-    // Soft delete - deactivate instead of removing
-    user.isActive = false
-    user.email = `deleted_${Date.now()}_${user.email}`
-    await user.save()
+    // If only assigned to completed projects (or none), delete user from DB
+    await User.findByIdAndDelete(userId)
 
     res.status(200).json({
       success: true,
-      message: "User deactivated successfully",
+      message: "User deleted successfully",
     })
-  }),
+  })
 )
 
 // Get user statistics (Admin only)

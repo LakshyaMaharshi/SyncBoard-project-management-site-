@@ -2,10 +2,17 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import { userAPI } from "../../services/api"
 
 // Async thunks
-export const fetchUsers = createAsyncThunk("users/fetchUsers", async (_, { rejectWithValue }) => {
+export const fetchUsers = createAsyncThunk("users/fetchUsers", async (_, { getState, rejectWithValue }) => {
   try {
-    const response = await userAPI.getUsers()
-    return response.data.data
+    const state = getState();
+    const role = state.auth?.user?.role;
+    let response;
+    if (role === "project_lead") {
+      response = await userAPI.getDevelopers();
+    } else {
+      response = await userAPI.getUsers();
+    }
+    return response.data.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || "Failed to fetch users")
   }
