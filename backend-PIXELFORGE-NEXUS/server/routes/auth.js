@@ -450,6 +450,7 @@ router.post(
     if (hashedOtp !== user.mfaOtp) return next(new AppError("Invalid OTP", 400))
 
     user.mfaEnabled = true
+    user.emailVerified = true
     user.mfaOtp = undefined
     user.mfaOtpExpires = undefined
     await user.save({ validateBeforeSave: false })
