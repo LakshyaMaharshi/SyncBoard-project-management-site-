@@ -36,7 +36,7 @@ const Register = () => {
       ...formData,
       [e.target.name]: e.target.value,
     })
-    setLocalError("") // Clear local error on input change
+    setLocalError("") 
   }
 
   const handleVerificationChange = (e) => {
@@ -44,7 +44,7 @@ const Register = () => {
       ...verificationData,
       [e.target.name]: e.target.value,
     })
-    setLocalError("") // Clear local error on input change
+    setLocalError("") 
   }
 
   const handleSubmit = async (e) => {
@@ -53,26 +53,22 @@ const Register = () => {
     dispatch(clearMessage())
     setLocalError("")
 
-    // Validate required fields
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword || !formData.companyName) {
       setLocalError("Please fill in all required fields")
       return
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
       setLocalError("Please enter a valid email address")
       return
     }
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setLocalError("Passwords do not match")
       return
     }
 
-    // Validate password strength
     if (formData.password.length < 8) {
       setLocalError("Password must be at least 8 characters long")
       return

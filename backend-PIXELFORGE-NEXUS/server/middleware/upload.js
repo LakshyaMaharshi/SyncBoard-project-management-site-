@@ -3,16 +3,13 @@ const path = require("path")
 const fs = require("fs")
 const { AppError } = require("./errorHandler")
 
-// Ensure upload directory exists
 const uploadDir = path.join(__dirname, "../uploads")
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true })
 }
 
-// Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Create project-specific directory
     const projectId = req.params.id || req.params.projectId
     const projectDir = path.join(uploadDir, projectId)
 
@@ -23,7 +20,6 @@ const storage = multer.diskStorage({
     cb(null, projectDir)
   },
   filename: (req, file, cb) => {
-    // Generate unique filename
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9)
     const extension = path.extname(file.originalname)
     const filename = `${file.fieldname}-${uniqueSuffix}${extension}`
@@ -31,9 +27,7 @@ const storage = multer.diskStorage({
   },
 })
 
-// File filter function
 const fileFilter = (req, file, cb) => {
-  // Allowed file types
   const allowedTypes = [
     "application/pdf",
     "application/msword",
@@ -56,18 +50,16 @@ const fileFilter = (req, file, cb) => {
     )
   }
 }
-
-// Configure multer
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-    files: 5, // Maximum 5 files per request
+    fileSize: 10 * 1024 * 1024, 
+    files: 5, 
   },
 })
 
-// Middleware to handle multer errors
+
 const handleUploadErrors = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {
@@ -88,31 +80,23 @@ const handleUploadErrors = (err, req, res, next) => {
   next()
 }
 
-// Single file upload middleware
 const uploadSingle = (fieldName = "document") => {
   return [upload.single(fieldName), handleUploadErrors]
 }
 
-// Multiple files upload middleware
 const uploadMultiple = (fieldName = "documents", maxCount = 5) => {
   return [upload.array(fieldName, maxCount), handleUploadErrors]
 }
 
-// Validate uploaded file
 const validateUploadedFile = (req, res, next) => {
   if (!req.file) {
     return next(new AppError("No file uploaded", 400))
   }
-
-  // Additional security checks
   const file = req.file
 
-  // Check file size again (redundant but safe)
   if (file.size > 10 * 1024 * 1024) {
     return next(new AppError("File size exceeds 10MB limit", 400))
   }
-
-  // Validate file extension matches mimetype
   const extension = path.extname(file.originalname).toLowerCase()
   const mimetypeExtensions = {
     "application/pdf": [".pdf"],
@@ -134,12 +118,11 @@ const validateUploadedFile = (req, res, next) => {
   next()
 }
 
-// Clean up uploaded files on error
 const cleanupUploadedFiles = (req, res, next) => {
   const originalSend = res.send
 
   res.send = function (data) {
-    // If there's an error and files were uploaded, clean them up
+
     if (res.statusCode >= 400) {
       if (req.file) {
         fs.unlink(req.file.path, (err) => {

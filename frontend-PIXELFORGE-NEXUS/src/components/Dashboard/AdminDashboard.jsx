@@ -105,7 +105,6 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Navigation Tabs */}
         <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-2 mb-8 border border-gray-200/50 shadow-sm">
           <div className="flex flex-wrap gap-2">
             {tabs.map((tab) => (
@@ -125,10 +124,8 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
           </div>
         </div>
 
-        {/* Projects Tab */}
         {activeTab === "projects" && (
           <div className="space-y-8">
-            {/* Section Header */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-sm">
               <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
                 <div className="space-y-2">
@@ -158,7 +155,6 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
               </div>
             </div>
 
-            {/* Active Projects */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-bold text-gray-900 flex items-center space-x-3">
@@ -210,7 +206,6 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
               )}
             </div>
 
-            {/* Completed Projects */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-bold text-gray-900 flex items-center space-x-3">
@@ -258,14 +253,12 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
           </div>
         )}
 
-        {/* All Active Projects Tab */}
         {activeTab === "all" && (
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-sm">
             <AllActiveProjects allActiveProjects={allActiveProjects} />
           </div>
         )}
 
-        {/* User Management Tab */}
         {activeTab === "users" && (
           <div className="space-y-6">
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-sm">
@@ -294,7 +287,6 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
         )}
       </div>
 
-      {/* Modals */}
       {showCreateModal && (
         <CreateProjectModal onClose={() => setShowCreateModal(false)} onSubmit={handleCreateProject} />
       )}

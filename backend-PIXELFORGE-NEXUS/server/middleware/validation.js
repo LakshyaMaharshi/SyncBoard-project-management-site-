@@ -1,7 +1,6 @@
 const { body, validationResult } = require("express-validator")
 const { AppError } = require("./errorHandler")
 
-// Validation middleware
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
@@ -10,8 +9,6 @@ const handleValidationErrors = (req, res, next) => {
   }
   next()
 }
-
-// User registration validation
 const validateUserRegistration = [
   body("name").trim().isLength({ min: 2, max: 50 }).withMessage("Name must be between 2 and 50 characters"),
   body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email"),
@@ -26,7 +23,6 @@ const validateUserRegistration = [
   handleValidationErrors,
 ]
 
-// Project creation validation
 const validateProjectCreation = [
   body("name").trim().isLength({ min: 3, max: 100 }).withMessage("Project name must be between 3 and 100 characters"),
   body("description")
@@ -45,7 +41,6 @@ const validateProjectCreation = [
   handleValidationErrors,
 ]
 
-// Login validation
 const validateLogin = [
   body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email"),
   body("password").notEmpty().withMessage("Password is required"),

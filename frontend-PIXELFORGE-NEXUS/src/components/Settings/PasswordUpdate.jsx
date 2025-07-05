@@ -20,7 +20,7 @@ const PasswordUpdate = () => {
       ...formData,
       [e.target.name]: e.target.value,
     })
-    setLocalError("") // Clear local error on input change
+    setLocalError("")
   }
 
   const handleSubmit = async (e) => {
@@ -29,13 +29,11 @@ const PasswordUpdate = () => {
     dispatch(clearMessage())
     setLocalError("")
 
-    // Validate passwords match
     if (formData.newPassword !== formData.confirmPassword) {
       setLocalError("New password and confirm password do not match")
       return
     }
 
-    // Validate password strength
     if (formData.newPassword.length < 8) {
       setLocalError("New password must be at least 8 characters long")
       return

@@ -15,10 +15,8 @@ import ProjectDetails from "./components/Projects/ProjectDetails"
 import UserManagement from "./components/Users/UserManagement"
 import AccountSettings from "./components/Settings/AccountSettings"
 
-// CSS
 import "./App.css"
 
-// Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading, token } = useSelector((state) => state.auth)
 
@@ -38,7 +36,6 @@ const ProtectedRoute = ({ children }) => {
   return children
 }
 
-// Public Route Component (redirect to dashboard if already authenticated)
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth)
 
@@ -53,7 +50,6 @@ function App() {
   const dispatch = useDispatch()
   const { token, isAuthenticated } = useSelector((state) => state.auth)
 
-  // Verify token on app load
   useEffect(() => {
     if (token && !isAuthenticated) {
       dispatch(verifyToken(token))
@@ -64,7 +60,6 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Public Routes */}
           <Route
             path="/login"
             element={
@@ -129,10 +124,8 @@ function App() {
             }
           />
 
-          {/* Default Route */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Catch all route */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>

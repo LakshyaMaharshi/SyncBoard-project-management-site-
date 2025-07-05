@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import { userAPI } from "../../services/api"
 
-// Async thunks
 export const fetchUsers = createAsyncThunk("users/fetchUsers", async (_, { getState, rejectWithValue }) => {
   try {
     const state = getState();
@@ -56,7 +55,6 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Users
       .addCase(fetchUsers.pending, (state) => {
         state.loading = true
         state.error = null
@@ -71,7 +69,6 @@ const userSlice = createSlice({
         state.error = action.payload
       })
 
-      // Update User
       .addCase(updateUser.fulfilled, (state, action) => {
         const index = state.users.findIndex((u) => u._id === action.payload._id)
         if (index !== -1) {
@@ -80,7 +77,6 @@ const userSlice = createSlice({
         state.message = "User updated successfully"
       })
 
-      // Delete User
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.users = state.users.filter((u) => u._id !== action.payload)
         state.message = "User deleted successfully"

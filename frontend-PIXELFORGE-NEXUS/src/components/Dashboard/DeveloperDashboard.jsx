@@ -5,7 +5,6 @@ import ProjectCard from "../Projects/ProjectCard"
 const DeveloperDashboard = ({ projects }) => {
   const { user } = useSelector((state) => state.auth)
   
-  // Filter projects where user is assigned as a developer
   const assignedProjects = projects.filter((project) =>
     project.assignedDevelopers?.some((dev) => dev === user._id || dev._id === user._id)
   )
@@ -13,7 +12,6 @@ const DeveloperDashboard = ({ projects }) => {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
             My Assigned Projects
@@ -24,7 +22,6 @@ const DeveloperDashboard = ({ projects }) => {
           </p>
         </div>
 
-        {/* Projects Grid */}
         {assignedProjects.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {assignedProjects.map((project) => (

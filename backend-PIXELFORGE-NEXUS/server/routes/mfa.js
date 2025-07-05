@@ -7,12 +7,10 @@ const crypto = require("crypto");
 
 const router = express.Router();
 
-// POST /api/auth/mfa/setup
 router.post("/mfa/setup", authenticate, catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user._id);
   if (!user) return next(new AppError("User not found", 404));
 
-  // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   user.mfaOtp = crypto.createHash("sha256").update(otp).digest("hex");
   user.mfaOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
@@ -23,7 +21,6 @@ router.post("/mfa/setup", authenticate, catchAsync(async (req, res, next) => {
   res.json({ success: true, message: "OTP sent to your email." });
 }));
 
-// POST /api/auth/mfa/enable
 router.post("/mfa/enable", authenticate, catchAsync(async (req, res, next) => {
     const { otp } = req.body;
     const user = await User.findById(req.user._id).select("+mfaOtp +mfaOtpExpires");
@@ -42,7 +39,6 @@ router.post("/mfa/enable", authenticate, catchAsync(async (req, res, next) => {
     res.json({ success: true, message: "MFA enabled successfully." });
   }));
 
-  // POST /api/auth/mfa/disable
 router.post("/mfa/disable", authenticate, catchAsync(async (req, res, next) => {
     const { otp } = req.body;
     const user = await User.findById(req.user._id).select("+mfaOtp +mfaOtpExpires");

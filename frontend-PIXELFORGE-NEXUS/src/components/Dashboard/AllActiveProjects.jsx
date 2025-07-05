@@ -2,7 +2,6 @@
 
 import ProjectCard from "../Projects/ProjectCard"
 
-// ✅ Component to display all active projects (read-only view for all users)
 const AllActiveProjects = ({ allActiveProjects }) => {
   const safeAllActiveProjects = Array.isArray(allActiveProjects) ? allActiveProjects : []
 

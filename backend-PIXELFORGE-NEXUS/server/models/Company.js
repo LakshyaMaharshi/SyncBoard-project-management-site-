@@ -20,7 +20,7 @@ const companySchema = new mongoose.Schema(
       trim: true,
       validate: {
         validator: (v) => {
-          if (!v) return true // Optional field
+          if (!v) return true
           return /^https?:\/\/.+/.test(v)
         },
         message: "Please provide a valid website URL",
@@ -53,12 +53,10 @@ const companySchema = new mongoose.Schema(
   },
 )
 
-// Indexes for performance
 companySchema.index({ name: 1 })
 companySchema.index({ isActive: 1 })
 companySchema.index({ createdBy: 1 })
 
-// Virtual for employee count
 companySchema.virtual("employeeCount", {
   ref: "User",
   localField: "_id",
@@ -66,7 +64,6 @@ companySchema.virtual("employeeCount", {
   count: true,
 })
 
-// Virtual for project count
 companySchema.virtual("projectCount", {
   ref: "Project",
   localField: "_id",

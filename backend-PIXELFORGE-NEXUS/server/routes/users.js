@@ -5,14 +5,11 @@ const { AppError, catchAsync } = require("../middleware/errorHandler")
 
 const router = express.Router()
 
-// All routes require authentication
 router.use(authenticate)
 
-// Get all developers in the same company (Admin and Project Lead)
 router.get(
   "/developers",
   catchAsync(async (req, res, next) => {
-    // Only allow admin or project_lead
     if (!["admin", "project_lead"].includes(req.user.role)) {
       return next(new AppError("Access denied", 403))
     }
@@ -28,19 +25,16 @@ router.get(
   })
 )
 
-// Get all users (Admin only)
 router.get(
   "/",
   adminOnly,
   catchAsync(async (req, res) => {
     const { role, isActive, page = 1, limit = 10 } = req.query
 
-    // Build query
     const query = {}
     if (role) query.role = role
     if (isActive !== undefined) query.isActive = isActive === "true"
 
-    // Calculate pagination
     const skip = (page - 1) * limit
 
     const users = await User.find(query)
@@ -62,13 +56,11 @@ router.get(
   }),
 )
 
-// Get single user
 router.get(
   "/:id",
   catchAsync(async (req, res, next) => {
     const userId = req.params.id
 
-    // Users can only view their own profile unless they're admin
     if (req.user.role !== "admin" && req.user._id.toString() !== userId) {
       return next(new AppError("Access denied", 403))
     }
@@ -86,14 +78,12 @@ router.get(
   }),
 )
 
-// Update user (Admin only for role changes, users can update their own profile)
 router.put(
   "/:id",
   catchAsync(async (req, res, next) => {
     const userId = req.params.id
     const { name, email, role, isActive } = req.body
 
-    // Check permissions
     const isOwnProfile = req.user._id.toString() === userId
     const isAdmin = req.user.role === "admin"
 
@@ -101,22 +91,18 @@ router.put(
       return next(new AppError("Access denied", 403))
     }
 
-    // Find user
     const user = await User.findById(userId)
     if (!user) {
       return next(new AppError("User not found", 404))
     }
 
-    // Build update object
     const updateData = {}
 
-    // Anyone can update their own name and email
     if (name && (isOwnProfile || isAdmin)) {
       updateData.name = name
     }
 
     if (email && (isOwnProfile || isAdmin)) {
-      // Check if email is already taken by another user
       const existingUser = await User.findOne({ email, _id: { $ne: userId } })
       if (existingUser) {
         return next(new AppError("Email is already taken", 400))
@@ -124,7 +110,6 @@ router.put(
       updateData.email = email
     }
 
-    // Only admins can update role and active status
     if (isAdmin) {
       if (role) {
         const validRoles = ["admin", "project_lead", "developer"]
@@ -138,8 +123,6 @@ router.put(
         updateData.isActive = isActive
       }
     }
-
-    // Update user
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true, runValidators: true }).select(
       "-passwordChangedAt -loginAttempts -lockUntil",
     )
@@ -151,14 +134,12 @@ router.put(
   }),
 )
 
-// Delete user (Admin only)
 router.delete(
   "/:id",
   adminOnly,
   catchAsync(async (req, res, next) => {
     const userId = req.params.id
 
-    // Prevent admin from deleting themselves
     if (req.user._id.toString() === userId) {
       return next(new AppError("Cannot delete your own account", 400))
     }
@@ -168,13 +149,11 @@ router.delete(
       return next(new AppError("User not found", 404))
     }
 
-    // Check if user is assigned to any projects (lead or developer)
     const Project = require("../models/Project")
     const assignedProjects = await Project.find({
       $or: [{ projectLead: userId }, { assignedDevelopers: userId }],
     })
 
-    // Separate into completed and not completed
     const notCompletedProjects = assignedProjects.filter(p => p.status !== "completed")
 
     if (notCompletedProjects.length > 0) {
@@ -187,7 +166,6 @@ router.delete(
       )
     }
 
-    // If only assigned to completed projects (or none), delete user from DB
     await User.findByIdAndDelete(userId)
 
     res.status(200).json({
@@ -197,7 +175,6 @@ router.delete(
   })
 )
 
-// Get user statistics (Admin only)
 router.get(
   "/stats/overview",
   adminOnly,

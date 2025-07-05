@@ -38,7 +38,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLocalOtpError("")
-    // Only send mfaCode if requiresMFA is true and the user has entered it
     if (requiresMFA && !formData.mfaCode) {
       setLocalOtpError("Please enter the OTP sent to your email.")
       return
@@ -56,7 +55,6 @@ const Login = () => {
     }
   }
 
-  // Clear mfaCode when requiresMFA first becomes true
   useEffect(() => {
     if (requiresMFA) {
       setFormData((prev) => ({ ...prev, mfaCode: "" }))

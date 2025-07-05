@@ -91,19 +91,16 @@ const documentSchema = new mongoose.Schema(
   },
 )
 
-// Indexes for performance
 documentSchema.index({ project: 1 })
 documentSchema.index({ uploadedBy: 1 })
 documentSchema.index({ createdAt: -1 })
 documentSchema.index({ isActive: 1 })
 documentSchema.index({ mimetype: 1 })
 
-// Virtual for file extension
 documentSchema.virtual("extension").get(function () {
   return path.extname(this.originalName).toLowerCase()
 })
 
-// Virtual for file size in human readable format
 documentSchema.virtual("sizeFormatted").get(function () {
   const bytes = this.size
   if (bytes === 0) return "0 Bytes"
@@ -115,7 +112,6 @@ documentSchema.virtual("sizeFormatted").get(function () {
   return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
 })
 
-// Virtual for file type category
 documentSchema.virtual("category").get(function () {
   const imageTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"]
   const documentTypes = [
@@ -135,19 +131,16 @@ documentSchema.virtual("category").get(function () {
   return "other"
 })
 
-// Virtual for download URL
 documentSchema.virtual("downloadUrl").get(function () {
   return `/api/projects/${this.project}/documents/${this._id}/download`
 })
 
-// Instance method to increment download count
 documentSchema.methods.incrementDownloadCount = function () {
   this.downloadCount += 1
   this.lastDownloaded = new Date()
   return this.save()
 }
 
-// Static method to get documents by project with access control
 documentSchema.statics.getProjectDocuments = async function (projectId, userId, userRole, userCompanyId) {
   const Project = mongoose.model("Project")
   const project = await Project.findById(projectId)
@@ -156,12 +149,10 @@ documentSchema.statics.getProjectDocuments = async function (projectId, userId, 
     throw new Error("Project not found")
   }
 
-  // Check if project belongs to user's company
   if (project.company.toString() !== userCompanyId.toString()) {
     throw new Error("Access denied to project documents")
   }
 
-  // Check user access to project
   let hasAccess = false
 
   if (userRole === "admin") {
@@ -179,30 +170,22 @@ documentSchema.statics.getProjectDocuments = async function (projectId, userId, 
   return this.find({ project: projectId, isActive: true }).populate("uploadedBy", "name email").sort({ createdAt: -1 })
 }
 
-// Static method to check if user can upload to project
 documentSchema.statics.canUserUploadToProject = async (projectId, userId, userRole, userCompanyId) => {
   const Project = mongoose.model("Project")
   const project = await Project.findById(projectId)
 
   if (!project) return false
 
-  // Check if project belongs to user's company
   if (project.company.toString() !== userCompanyId.toString()) return false
 
-  // Admin can upload to any project in their company
   if (userRole === "admin") return true
 
-  // Project lead can upload to projects they are assigned to lead
   if (userRole === "project_lead") {
-    // console.log(userId, typeof userId)
     return project.projectLead && project.projectLead.toString() === userId.toString()
   }
 
-  // Developers cannot upload documents
   return false
 }
-
-// Static method to check if user can delete document
 documentSchema.statics.canUserDeleteDocument = async function (documentId, userId, userRole, userCompanyId) {
   const document = await this.findById(documentId).populate("project")
 
@@ -211,29 +194,24 @@ documentSchema.statics.canUserDeleteDocument = async function (documentId, userI
     return false
   }
 
-  // Check if project belongs to user's company
   if (document.project.company.toString() !== userCompanyId.toString()) {
     console.log("project does not belong to user's company")
     return false
   }
 
-  // Admin can delete any document in their company
   if (userRole === "admin") {
     console.log("admin can delete document")
     return true
   }
 
-  // Project lead can delete documents from projects they lead
   if (userRole === "project_lead") {
     console.log("project lead can delete document")
     return document.project.projectLead && document.project.projectLead.toString() === userId.toString()
   }
 
-  // Developers cannot delete documents
   return false
 }
 
-// Pre-remove middleware to clean up file from filesystem
 documentSchema.pre("remove", function (next) {
   const fs = require("fs")
   const filePath = this.path

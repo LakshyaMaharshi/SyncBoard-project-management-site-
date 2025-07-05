@@ -17,7 +17,6 @@ const Navbar = () => {
     <nav className="bg-white shadow-sm border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          {/* Left side - Brand and navigation */}
           <div className="flex items-center">
             <Link 
               to="/dashboard" 
@@ -65,7 +64,6 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Right side - User dropdown */}
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
             <div className="ml-3 relative">
               <div className="flex items-center space-x-4">
@@ -85,7 +83,6 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Mobile menu button */}
           <div className="-mr-2 flex items-center sm:hidden">
             <button
               type="button"
@@ -129,7 +126,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
       <div className="sm:hidden" id="mobile-menu">
         <div className="pt-2 pb-3 space-y-1">
           <Link

@@ -20,10 +20,8 @@ const ProjectLeadDashboard = ({ projects, allActiveProjects }) => {
     dispatch(fetchUsers())
   }, [dispatch])
 
-  // Filter developers from users (already filtered by backend for project leads)
   const developers = users
 
-  // Filter projects where user is the project lead
   const myProjects = (Array.isArray(projects) ? projects : []).filter(
     (project) => project.projectLead === user._id || project.projectLead?._id === user._id
   )
@@ -69,7 +67,6 @@ const ProjectLeadDashboard = ({ projects, allActiveProjects }) => {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
             Project Lead Dashboard
@@ -79,7 +76,6 @@ const ProjectLeadDashboard = ({ projects, allActiveProjects }) => {
           </p>
         </div>
 
-        {/* Tabs */}
         <div className="flex space-x-1 border-b border-gray-200 mb-6 bg-white rounded-t-lg shadow-sm">
           <button
             className={`flex items-center px-4 py-3 font-medium text-sm transition-colors duration-200 ${
@@ -109,7 +105,6 @@ const ProjectLeadDashboard = ({ projects, allActiveProjects }) => {
           </button>
         </div>
 
-        {/* Content */}
         {activeTab === "myprojects" && (
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex justify-between items-center mb-6">
@@ -175,7 +170,6 @@ const ProjectLeadDashboard = ({ projects, allActiveProjects }) => {
           </div>
         )}
 
-        {/* Assign Developer Modal */}
         {showAssignModal && selectedProject && (
           <AssignDeveloperModal
             project={selectedProject}

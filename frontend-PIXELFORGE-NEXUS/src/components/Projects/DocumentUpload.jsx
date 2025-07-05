@@ -9,7 +9,6 @@ const DocumentUpload = ({ onUpload, onCancel }) => {
   const [dragActive, setDragActive] = useState(false)
 
   const handleFileSelect = (selectedFile) => {
-    // Validate file type
     const allowedTypes = [
       "application/pdf",
       "application/msword",
@@ -28,7 +27,6 @@ const DocumentUpload = ({ onUpload, onCancel }) => {
       return
     }
 
-    // Validate file size (10MB limit)
     if (selectedFile.size > 10 * 1024 * 1024) {
       alert("File size cannot exceed 10MB")
       return
@@ -220,12 +218,7 @@ const DocumentUpload = ({ onUpload, onCancel }) => {
             </svg>
             <span className="text-green-800 font-medium">Images</span>
           </div>
-          {/* <div className="flex items-center gap-2 p-3 bg-purple-50 rounded-lg">
-            <svg className="w-5 h-5 text-purple-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <span className="text-purple-800 font-medium">Spreadsheets</span>
-          </div> */}
+        
         </div>
         <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
           <p className="text-sm text-amber-800">

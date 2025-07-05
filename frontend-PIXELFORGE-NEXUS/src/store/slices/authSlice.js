@@ -1,13 +1,10 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import { authAPI } from "../../services/api"
 
-// Async thunks
 export const loginUser = createAsyncThunk("auth/login", async ({ email, password, mfaCode }, { rejectWithValue }) => {
   try {
     const response = await authAPI.login({ email, password, mfaCode });
-    // If backend says MFA is required, treat as a special case
     if (response.data.requiresMFA) {
-      // Use rejectWithValue so it goes to the .rejected reducer
       return rejectWithValue({
         message: response.data.message,
         requiresMFA: true,
@@ -28,7 +25,6 @@ export const registerUser = createAsyncThunk("auth/register", async (userData, {
   try {
     const response = await authAPI.register(userData)
 
-    // Handle email verification flow
     if (response.data.requiresEmailVerification) {
       return { 
         message: response.data.message,
@@ -37,7 +33,6 @@ export const registerUser = createAsyncThunk("auth/register", async (userData, {
       }
     }
 
-    // Handle auto-login after registration
     if (response.data.data && response.data.data.token) {
       const { token, user } = response.data.data
       localStorage.setItem("token", token)
@@ -146,7 +141,6 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true
         state.error = null
@@ -165,7 +159,6 @@ const authSlice = createSlice({
         state.requiresMFA = action.payload?.requiresMFA || false
       })
 
-      // Register
       .addCase(registerUser.pending, (state) => {
         state.loading = true
         state.error = null
@@ -184,7 +177,6 @@ const authSlice = createSlice({
         state.error = action.payload
       })
 
-      // Verify Email
       .addCase(verifyEmail.pending, (state) => {
         state.loading = true
         state.error = null
@@ -201,7 +193,6 @@ const authSlice = createSlice({
         state.error = action.payload
       })
 
-      // Verify Token
       .addCase(verifyToken.pending, (state) => {
         state.loading = true
       })
@@ -216,7 +207,6 @@ const authSlice = createSlice({
         state.token = null
       })
 
-      // Update Password
       .addCase(updatePassword.pending, (state) => {
         state.loading = true
         state.error = null
@@ -231,14 +221,13 @@ const authSlice = createSlice({
         state.error = action.payload
       })
 
-      // Setup MFA
       .addCase(setupMFA.pending, (state) => {
         state.loading = true
         state.error = null
       })
       .addCase(setupMFA.fulfilled, (state, action) => {
         state.loading = false
-        state.mfaSetup = true // Show OTP input
+        state.mfaSetup = true 
         state.message = action.payload.message
         state.error = null
       })
@@ -248,7 +237,6 @@ const authSlice = createSlice({
         state.error = action.payload
       })
 
-      // Enable MFA
       .addCase(enableMFA.pending, (state) => {
         state.loading = true
         state.error = null
@@ -265,7 +253,6 @@ const authSlice = createSlice({
         state.error = action.payload
       })
 
-      // Disable MFA
       .addCase(disableMFA.pending, (state) => {
         state.loading = true
         state.error = null

@@ -5,16 +5,13 @@ require("dotenv").config()
 
 const seedDatabase = async () => {
   try {
-    // Connect to database
     await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/pixelforge-nexus")
     console.log("Connected to MongoDB")
 
-    // Clear existing data
     await User.deleteMany({})
     await Project.deleteMany({})
     console.log("Cleared existing data")
 
-    // Create admin user
     const admin = new User({
       name: "System Administrator",
       email: "admin@pixelforge.com",
@@ -24,7 +21,6 @@ const seedDatabase = async () => {
     await admin.save()
     console.log("Created admin user")
 
-    // Create project lead
     const projectLead = new User({
       name: "John Smith",
       email: "john.smith@pixelforge.com",
@@ -34,7 +30,6 @@ const seedDatabase = async () => {
     await projectLead.save()
     console.log("Created project lead user")
 
-    // Create developers
     const developer1 = new User({
       name: "Alice Johnson",
       email: "alice.johnson@pixelforge.com",
@@ -60,11 +55,10 @@ const seedDatabase = async () => {
     await developer3.save()
     console.log("Created developer users")
 
-    // Create sample projects
     const project1 = new Project({
       name: "Mobile Game Development",
       description: "Develop a new mobile puzzle game with engaging graphics and challenging levels.",
-      deadline: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
+      deadline: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), 
       projectLead: projectLead._id,
       assignedDevelopers: [developer1._id, developer2._id],
       createdBy: admin._id,
@@ -77,7 +71,7 @@ const seedDatabase = async () => {
     const project2 = new Project({
       name: "Web Platform Redesign",
       description: "Complete redesign of the company website with modern UI/UX and improved performance.",
-      deadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days from now
+      deadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), 
       projectLead: projectLead._id,
       assignedDevelopers: [developer2._id, developer3._id],
       createdBy: admin._id,
@@ -90,7 +84,7 @@ const seedDatabase = async () => {
     const project3 = new Project({
       name: "API Integration System",
       description: "Build a robust API integration system for third-party services.",
-      deadline: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000), // 45 days from now
+      deadline: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000), 
       projectLead: projectLead._id,
       assignedDevelopers: [developer1._id],
       createdBy: admin._id,

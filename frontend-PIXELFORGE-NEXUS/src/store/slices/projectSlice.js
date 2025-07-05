@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import { projectAPI } from "../../services/api"
 
-// Async thunks
 export const fetchProjects = createAsyncThunk("projects/fetchProjects", async (_, { rejectWithValue }) => {
   try {
     const response = await projectAPI.getProjects()
@@ -136,7 +135,6 @@ const projectSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Projects
       .addCase(fetchProjects.pending, (state) => {
         state.loading = true
         state.error = null
@@ -151,7 +149,6 @@ const projectSlice = createSlice({
         state.error = action.payload
       })
 
-      // Fetch All Active Projects
       .addCase(fetchAllActiveProjects.pending, (state) => {
         state.loading = true
         state.error = null
@@ -166,7 +163,6 @@ const projectSlice = createSlice({
         state.error = action.payload
       })
 
-      // Create Project
       .addCase(createProject.pending, (state) => {
         state.loading = true
         state.error = null
@@ -182,7 +178,6 @@ const projectSlice = createSlice({
         state.error = action.payload
       })
 
-      // Update Project
       .addCase(updateProject.fulfilled, (state, action) => {
         const index = state.projects.findIndex((p) => p._id === action.payload._id)
         if (index !== -1) {
@@ -191,14 +186,12 @@ const projectSlice = createSlice({
         state.message = "Project updated successfully"
       })
 
-      // Delete Project
       .addCase(deleteProject.fulfilled, (state, action) => {
         state.projects = state.projects.filter((p) => p._id !== action.payload)
         state.allActiveProjects = state.allActiveProjects.filter((p) => p._id !== action.payload)
         state.message = "Project deleted successfully"
       })
 
-      // Assign Developer
       .addCase(assignDeveloper.fulfilled, (state, action) => {
         const index = state.projects.findIndex((p) => p._id === action.payload._id)
         if (index !== -1) {
@@ -207,7 +200,6 @@ const projectSlice = createSlice({
         state.message = "Developer assigned successfully"
       })
 
-      // Remove Developer
       .addCase(removeDeveloper.fulfilled, (state, action) => {
         const index = state.projects.findIndex((p) => p._id === action.payload._id)
         if (index !== -1) {
@@ -216,7 +208,6 @@ const projectSlice = createSlice({
         state.message = "Developer removed successfully"
       })
 
-      // Upload Document
       .addCase(uploadDocument.fulfilled, (state, action) => {
         const { projectId, document } = action.payload
         const project = state.projects.find((p) => p._id === projectId)
@@ -227,7 +218,6 @@ const projectSlice = createSlice({
         state.message = "Document uploaded successfully"
       })
 
-      // Delete Document
       .addCase(deleteDocument.fulfilled, (state, action) => {
         const { projectId, documentId } = action.payload
         const project = state.projects.find((p) => p._id === projectId)
@@ -237,7 +227,6 @@ const projectSlice = createSlice({
         state.message = "Document deleted successfully"
       })
 
-      // Complete Project
       .addCase(completeProject.fulfilled, (state, action) => {
         const index = state.projects.findIndex((p) => p._id === action.payload._id)
         if (index !== -1) {

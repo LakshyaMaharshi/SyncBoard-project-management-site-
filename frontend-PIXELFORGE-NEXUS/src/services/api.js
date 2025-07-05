@@ -2,7 +2,6 @@ import axios from "axios"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
 
-// Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -10,7 +9,6 @@ const api = axios.create({
   },
 })
 
-// Request interceptor to add token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token")
@@ -24,7 +22,6 @@ api.interceptors.request.use(
   },
 )
 
-// Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -39,9 +36,9 @@ api.interceptors.response.use(
 // Auth API
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),
-  register: (userData) => api.post("/auth/register", userData), // Company registration
+  register: (userData) => api.post("/auth/register", userData), 
   verifyEmail: (verificationData) => api.post("/auth/verify-email", verificationData),
-  registerTeamMember: (userData) => api.post("/auth/register-team-member", userData), // Team member registration
+  registerTeamMember: (userData) => api.post("/auth/register-team-member", userData), 
   verifyToken: (token) =>
     api.get("/auth/verify", {
       headers: { Authorization: `Bearer ${token}` },
@@ -52,7 +49,6 @@ export const authAPI = {
   disableMFA: (data) => api.post("/auth/mfa/disable", data),
 }
 
-// Project API - Fixed naming from projectsAPI to projectAPI
 export const projectAPI = {
   getProjects: () => api.get("/projects"),
   getAllActiveProjects: () => api.get("/projects/active"),
@@ -71,11 +67,10 @@ export const projectAPI = {
   deleteDocument: (projectId, documentId) => api.delete(`/projects/${projectId}/documents/${documentId}`),
   downloadDocument: (projectId, documentId) =>
     api.get(`/projects/${projectId}/documents/${documentId}/download`, {
-      responseType: "blob", // Important for file downloads
+      responseType: "blob",
     }),
 }
 
-// User API - Fixed naming from usersAPI to userAPI
 export const userAPI = {
   getUsers: () => api.get("/users"),
   getUser: (id) => api.get(`/users/${id}`),

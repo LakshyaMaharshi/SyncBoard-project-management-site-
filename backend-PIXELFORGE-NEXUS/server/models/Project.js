@@ -44,7 +44,7 @@ const projectSchema = new mongoose.Schema(
       ref: "User",
       validate: {
         validator: async (value) => {
-          if (!value) return true // Optional field
+          if (!value) return true 
           const user = await mongoose.model("User").findById(value)
           return user && (user.role === "project_lead" || user.role === "admin")
         },
@@ -103,7 +103,6 @@ const projectSchema = new mongoose.Schema(
   },
 )
 
-// Indexes for performance
 projectSchema.index({ status: 1 })
 projectSchema.index({ deadline: 1 })
 projectSchema.index({ projectLead: 1 })
@@ -112,12 +111,9 @@ projectSchema.index({ createdBy: 1 })
 projectSchema.index({ company: 1 })
 projectSchema.index({ createdAt: -1 })
 
-// Virtual for checking if project is overdue
 projectSchema.virtual("isOverdue").get(function () {
   return this.status === "active" && this.deadline < new Date()
 })
-
-// Virtual for days until deadline
 projectSchema.virtual("daysUntilDeadline").get(function () {
   const now = new Date()
   const deadline = new Date(this.deadline)
@@ -125,19 +121,15 @@ projectSchema.virtual("daysUntilDeadline").get(function () {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 })
 
-// Virtual for progress percentage (based on completed vs total estimated hours)
 projectSchema.virtual("progressPercentage").get(function () {
   if (!this.estimatedHours || this.estimatedHours === 0) return 0
   return Math.min(Math.round((this.actualHours / this.estimatedHours) * 100), 100)
 })
 
-// Pre-save middleware to set completedAt when status changes to completed
 projectSchema.pre("save", function (next) {
   if (this.isModified("status") && this.status === "completed" && !this.completedAt) {
     this.completedAt = new Date()
   }
-
-  // Clear completedAt if status changes from completed to something else
   if (this.isModified("status") && this.status !== "completed" && this.completedAt) {
     this.completedAt = undefined
   }
@@ -145,7 +137,6 @@ projectSchema.pre("save", function (next) {
   next()
 })
 
-// Get all active projects (for all users to view)
 projectSchema.statics.getAllActiveProjects = function () {
   return this.find({ status: "active" })
     .populate("projectLead", "name email role")
@@ -155,7 +146,6 @@ projectSchema.statics.getAllActiveProjects = function () {
     .sort({ createdAt: -1 })
 }
 
-// Get all active projects within a company
 projectSchema.statics.getAllActiveProjectsByCompany = function (companyId) {
   return this.find({ status: "active", company: companyId })
     .populate("projectLead", "name email role")
@@ -165,24 +155,19 @@ projectSchema.statics.getAllActiveProjectsByCompany = function (companyId) {
     .sort({ createdAt: -1 })
 }
 
-// ✅ FIXED: Get projects by user role within their company
 projectSchema.statics.getProjectsByUserRole = function (userId, userRole, companyId) {
   const query = { company: companyId }
 
   switch (userRole) {
     case "admin":
-      // Admins can see all projects in their company
       break
     case "project_lead":
-      // ✅ FIXED: Project leads see ONLY projects where they are assigned as projectLead
       query.projectLead = userId
       break
     case "developer":
-      // Developers see projects they're assigned to
       query.assignedDevelopers = userId
       break
     default:
-      // No access
       query._id = { $in: [] }
   }
 
@@ -194,19 +179,16 @@ projectSchema.statics.getProjectsByUserRole = function (userId, userRole, compan
     .sort({ createdAt: -1 })
 }
 
-// ✅ FIXED: Static method to check if user can access project (within same company)
 projectSchema.statics.canUserAccessProject = async function (projectId, userId, userRole, userCompanyId) {
   const project = await this.findById(projectId)
   if (!project) return false
 
-  // Check if project belongs to user's company
   if (project.company.toString() !== userCompanyId.toString()) return false
 
   switch (userRole) {
     case "admin":
       return true
     case "project_lead":
-      // ✅ FIXED: Project leads can only access projects where they are the assigned project lead
       return project.projectLead && project.projectLead.toString() === userId
     case "developer":
       return project.assignedDevelopers.some((dev) => dev.toString() === userId)
@@ -215,14 +197,11 @@ projectSchema.statics.canUserAccessProject = async function (projectId, userId, 
   }
 }
 
-// ✅ FIXED: Instance method to check if user can modify project (within same company)
 projectSchema.methods.canUserModify = function (userId, userRole, userCompanyId) {
-  // Check if project belongs to user's company
   if (this.company.toString() !== userCompanyId.toString()) return false
 
   if (userRole === "admin") return true
 
-  // ✅ FIXED: Project leads can only modify projects where they are the assigned project lead
   if (userRole === "project_lead" && this.projectLead && this.projectLead.toString() === userId) return true
 
   return false

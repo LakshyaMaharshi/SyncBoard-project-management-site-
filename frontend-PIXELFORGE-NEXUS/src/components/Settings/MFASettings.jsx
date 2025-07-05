@@ -10,7 +10,6 @@ const MFASettings = () => {
   const { user, loading, error, message, mfaSetup } = useSelector((state) => state.auth)
   const mfaEnabled = user?.mfaEnabled || false
 
-  // Show OTP input if mfaSetup is true
   const showOtpInput = mfaSetup === true
 
   const handleSetupMFA = async () => {
@@ -35,7 +34,6 @@ const MFASettings = () => {
       return
     }
     
-    // First, send OTP to email
     dispatch(clearError())
     dispatch(clearMessage())
     const setupResult = await dispatch(setupMFA())
