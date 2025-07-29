@@ -47,6 +47,8 @@ export const authAPI = {
   setupMFA: () => api.post("/auth/mfa/setup"),
   enableMFA: (data) => api.post("/auth/mfa/enable", data),
   disableMFA: (data) => api.post("/auth/mfa/disable", data),
+  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+  resetPassword: (resetData) => api.post("/auth/reset-password", resetData),
 }
 
 export const projectAPI = {

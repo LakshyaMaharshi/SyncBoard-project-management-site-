@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
 import { projectAPI } from "../../services/api"
@@ -21,32 +21,31 @@ const ProjectDetails = () => {
   const [documentsLoading, setDocumentsLoading] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [showDocuments, setShowDocuments] = useState(false)
-  const [error, setError] = useState("")
   const [showEditModal, setShowEditModal] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
-  const [assigning, setAssigning] = useState(false)
   const [removingDevId, setRemovingDevId] = useState(null)
+  const [error, setError] = useState(null)
 
-  useEffect(() => {
-    if (id) {
-      fetchProject()
-    }
-    dispatch(fetchUsers())
-  }, [id, dispatch])
-
-  const fetchProject = async () => {
+  const fetchProject = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       const response = await projectAPI.getProject(id)
       setProject(response.data.data)
-      setError("")
     } catch (error) {
       console.error("Failed to fetch project:", error)
       setError("Failed to load project details")
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    if (id) {
+      fetchProject()
+    }
+    dispatch(fetchUsers())
+  }, [id, dispatch, fetchProject])
 
   const fetchDocuments = async () => {
     try {
@@ -54,10 +53,8 @@ const ProjectDetails = () => {
       const response = await projectAPI.getProjectDocuments(id)
       setDocuments(response.data.data)
       setShowDocuments(true)
-      setError("")
     } catch (error) {
       console.error("Failed to fetch documents:", error)
-      setError("Failed to load documents. You may not have permission to view documents for this project.")
       setDocuments([])
     } finally {
       setDocumentsLoading(false)
@@ -154,12 +151,12 @@ const ProjectDetails = () => {
       link.click()
       link.remove()
       window.URL.revokeObjectURL(url)
-    } catch (error) {
+    } catch {
       alert("Failed to download document")
     }
   }
 
-  const viewDocument = async (fileUrl, fileName) => {
+  const viewDocument = async (fileUrl) => {
     try {
       const match = fileUrl.match(/\/api\/projects\/([^/]+)\/documents\/([^/]+)\/download/)
       if (!match) throw new Error("Invalid download URL")
@@ -170,7 +167,7 @@ const ProjectDetails = () => {
       const url = window.URL.createObjectURL(blob)
       window.open(url, "_blank")
       setTimeout(() => window.URL.revokeObjectURL(url), 10000)
-    } catch (error) {
+    } catch {
       alert("Failed to view document")
     }
   }
@@ -189,7 +186,6 @@ const ProjectDetails = () => {
     }
   }
   const handleAssignDeveloperSubmit = async (developerId) => {
-    setAssigning(true)
     try {
       await projectAPI.assignDeveloper(id, developerId)
       setShowAssignModal(false)
@@ -198,8 +194,6 @@ const ProjectDetails = () => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to assign developer"
       return { success: false, error: errorMessage }
-    } finally {
-      setAssigning(false)
     }
   }
   const handleRemoveDeveloper = async (developerId) => {
@@ -208,7 +202,7 @@ const ProjectDetails = () => {
     try {
       await projectAPI.removeDeveloper(id, developerId)
       fetchProject()
-    } catch (error) {
+    } catch {
       alert("Failed to remove developer")
     } finally {
       setRemovingDevId(null)

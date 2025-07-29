@@ -31,7 +31,7 @@ router.get(
   catchAsync(async (req, res) => {
     const { role, isActive, page = 1, limit = 10 } = req.query
 
-    const query = {}
+    const query = { company: req.user.company._id }
     if (role) query.role = role
     if (isActive !== undefined) query.isActive = isActive === "true"
 
@@ -71,6 +71,11 @@ router.get(
       return next(new AppError("User not found", 404))
     }
 
+    // Check if the user belongs to the same company (for admin users)
+    if (req.user.role === "admin" && user.company.toString() !== req.user.company._id.toString()) {
+      return next(new AppError("Access denied - User from different company", 403))
+    }
+
     res.status(200).json({
       success: true,
       data: user,
@@ -94,6 +99,11 @@ router.put(
     const user = await User.findById(userId)
     if (!user) {
       return next(new AppError("User not found", 404))
+    }
+
+    // Check if the user belongs to the same company (for admin users)
+    if (isAdmin && user.company.toString() !== req.user.company._id.toString()) {
+      return next(new AppError("Access denied - User from different company", 403))
     }
 
     const updateData = {}
@@ -149,6 +159,11 @@ router.delete(
       return next(new AppError("User not found", 404))
     }
 
+    // Check if the user belongs to the same company
+    if (user.company.toString() !== req.user.company._id.toString()) {
+      return next(new AppError("Access denied - User from different company", 403))
+    }
+
     const Project = require("../models/Project")
     const assignedProjects = await Project.find({
       $or: [{ projectLead: userId }, { assignedDevelopers: userId }],
@@ -179,7 +194,12 @@ router.get(
   "/stats/overview",
   adminOnly,
   catchAsync(async (req, res) => {
+    const companyFilter = { company: req.user.company._id }
+    
     const stats = await User.aggregate([
+      {
+        $match: companyFilter
+      },
       {
         $group: {
           _id: "$role",
@@ -193,9 +213,10 @@ router.get(
       },
     ])
 
-    const totalUsers = await User.countDocuments()
-    const activeUsers = await User.countDocuments({ isActive: true })
+    const totalUsers = await User.countDocuments(companyFilter)
+    const activeUsers = await User.countDocuments({ ...companyFilter, isActive: true })
     const recentUsers = await User.countDocuments({
+      ...companyFilter,
       createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
     })
 

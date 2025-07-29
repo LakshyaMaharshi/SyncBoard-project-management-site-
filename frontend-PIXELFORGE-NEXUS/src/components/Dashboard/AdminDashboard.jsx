@@ -70,7 +70,6 @@ const AdminDashboard = ({ projects, allActiveProjects }) => {
   }
 
   const safeProjects = Array.isArray(projects) ? projects : []
-  const safeAllActiveProjects = Array.isArray(allActiveProjects) ? allActiveProjects : []
 
   const activeProjects = safeProjects.filter((p) => p.status !== "completed")
   const completedProjects = safeProjects.filter((p) => p.status === "completed")

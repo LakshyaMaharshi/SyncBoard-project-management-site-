@@ -22,7 +22,7 @@ router.use(authenticate)
 router.get(
   "/active",
   catchAsync(async (req, res) => {
-    const projects = await Project.getAllActiveProjects()
+    const projects = await Project.getAllActiveProjectsByCompany(req.user.company._id)
 
     res.status(200).json({
       success: true,

@@ -8,13 +8,9 @@ import DocumentUpload from "./DocumentUpload"
 const ProjectCard = ({
   project,
   onAssignDeveloper,
-  onRemoveDeveloper,
   onDocumentUpload,
   onEditProject,
   onCompleteProject,
-  showAdminActions = false,
-  showLeadActions = false,
-  showDeveloperView = false,
 }) => {
   const navigate = useNavigate()
   const { user } = useSelector((state) => state.auth)

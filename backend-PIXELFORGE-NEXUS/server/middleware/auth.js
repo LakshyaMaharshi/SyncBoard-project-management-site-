@@ -94,7 +94,7 @@ const checkProjectAccess = async (req, res, next) => {
     }
 
     next()
-  } catch (error) {
+  } catch {
     return next(new AppError("Error checking project access", 500))
   }
 }
@@ -119,7 +119,7 @@ const checkProjectModifyAccess = async (req, res, next) => {
 
     req.project = project
     next()
-  } catch (error) {
+  } catch {
     return next(new AppError("Error checking project modify access", 500))
   }
 }
@@ -142,7 +142,7 @@ const optionalAuth = async (req, res, next) => {
     }
 
     next()
-  } catch (error) {
+  } catch {
     next()
   }
 }

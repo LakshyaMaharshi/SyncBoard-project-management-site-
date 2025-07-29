@@ -9,6 +9,8 @@ import { verifyToken } from "./store/slices/authSlice"
 import Navbar from "./components/Layout/Navbar"
 import Login from "./components/Auth/Login"
 import Register from "./components/Auth/Register"
+import ForgotPassword from "./components/Auth/ForgotPassword"
+import ResetPassword from "./components/Auth/ResetPassword"
 import RegisterTeamMember from "./components/Auth/RegisterTeamMember"
 import Dashboard from "./components/Dashboard/Dashboard"
 import ProjectDetails from "./components/Projects/ProjectDetails"
@@ -73,6 +75,22 @@ function App() {
             element={
               <PublicRoute>
                 <Register />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <PublicRoute>
+                <ForgotPassword />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              <PublicRoute>
+                <ResetPassword />
               </PublicRoute>
             }
           />

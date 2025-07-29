@@ -20,7 +20,7 @@ const generateQRCode = async (otpauthUrl) => {
   try {
     const qrCodeDataURL = await QRCode.toDataURL(otpauthUrl)
     return qrCodeDataURL
-  } catch (error) {
+  } catch {
     throw new Error("Failed to generate QR code")
   }
 }

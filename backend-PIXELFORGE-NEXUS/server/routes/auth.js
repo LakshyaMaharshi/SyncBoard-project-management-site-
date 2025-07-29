@@ -4,10 +4,8 @@ const User = require("../models/User")
 const Company = require("../models/Company")
 const { generateToken, authenticate } = require("../middleware/auth")
 const { AppError, catchAsync } = require("../middleware/errorHandler")
-const { generateMFASecret, generateQRCode, verifyMFAToken, validateMFATokenFormat } = require("../utils/mfa")
-const { sendMfaOtpEmail, sendEmailVerificationOtp } = require("../utils/email")
+const { sendMfaOtpEmail, sendEmailVerificationOtp, sendPasswordResetEmail } = require("../utils/email")
 const crypto = require("crypto")
-const { log } = require("console")
 
 const router = express.Router()
 const authLimiter = rateLimit({
@@ -140,7 +138,7 @@ router.post(
     }
     const session = await User.startSession()
 
-    let createdUser, createdCompany
+    let createdUser
 
     try {
       await session.withTransaction(async () => {
@@ -164,7 +162,6 @@ router.post(
         newUser.company = company._id
         await newUser.save({ session })
         createdUser = newUser
-        createdCompany = company
       })
       const otp = Math.floor(100000 + Math.random() * 900000).toString()
       const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex")
@@ -382,6 +379,102 @@ router.post(
 
     res.json({ success: true, message: "MFA disabled successfully." })
   }),
+)
+
+// Request password reset
+router.post(
+  "/forgot-password",
+  authLimiter,
+  catchAsync(async (req, res, next) => {
+    const { email } = req.body
+    
+    if (!email) {
+      return next(new AppError("Email is required", 400))
+    }
+
+    const user = await User.findOne({ email, isActive: true })
+    
+    if (!user) {
+      // Don't reveal if user exists or not for security
+      return res.status(200).json({
+        success: true,
+        message: "If an account with that email exists, we've sent a password reset link.",
+      })
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex")
+    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex")
+    
+    // Set token and expiration (1 hour)
+    user.passwordResetToken = hashedToken
+    user.passwordResetExpires = Date.now() + 60 * 60 * 1000 // 1 hour
+    await user.save({ validateBeforeSave: false })
+
+    try {
+      await sendPasswordResetEmail(user.email, user.name, resetToken)
+      
+      res.status(200).json({
+        success: true,
+        message: "If an account with that email exists, we've sent a password reset link.",
+      })
+    } catch (error) {
+      user.passwordResetToken = undefined
+      user.passwordResetExpires = undefined
+      await user.save({ validateBeforeSave: false })
+      
+      return next(new AppError("Error sending password reset email", 500))
+    }
+  })
+)
+
+// Reset password
+router.post(
+  "/reset-password",
+  authLimiter,
+  catchAsync(async (req, res, next) => {
+    const { token, newPassword } = req.body
+    
+    if (!token || !newPassword) {
+      return next(new AppError("Token and new password are required", 400))
+    }
+
+    if (newPassword.length < 8) {
+      return next(new AppError("Password must be at least 8 characters long", 400))
+    }
+
+    // Hash the token to compare with stored version
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex")
+    
+    // Find user with valid reset token
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+      isActive: true,
+    })
+
+    if (!user) {
+      return next(new AppError("Invalid or expired reset token", 400))
+    }
+
+    // Update password and clear reset token
+    user.password = newPassword
+    user.passwordResetToken = undefined
+    user.passwordResetExpires = undefined
+    user.passwordChangedAt = new Date()
+    
+    // Reset login attempts if any
+    if (user.loginAttempts > 0) {
+      await user.resetLoginAttempts()
+    }
+    
+    await user.save()
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successfully. You can now login with your new password.",
+    })
+  })
 )
 
 module.exports = router
